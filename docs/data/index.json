@@ -1,19 +1,25 @@
 {
+    "title": "OrthoFlow (Digitisation and Workflow Automation of Orthodontic Case Records)",
     "team": [
         {
-            "name": "Team Member Name 1",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "G.N.N.N.Madusanka",
+            "email": "e23214@eng.pdn.ac.lk",
+            "eNumber": "E/23/214"
         },
         {
-            "name": "Team Member Name 2",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "S.A.A.Upek",
+            "email": "e23407@eng.pdn.ac.lk",
+            "eNumber": "E/23/407"
         },
         {
-            "name": "Team Member Name 3",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "D.J.Thotagamuwa",
+            "email": "e23403@eng.pdn.ac.lk",
+            "eNumber": "E/23/403"
+        },
+        {
+            "name": "M.V.R.Dayananda",
+            "email": "e23054@eng.pdn.ac.lk",
+            "eNumber": "E/23/054"
         }
     ],
     "supervisors": [
