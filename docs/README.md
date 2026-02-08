@@ -3,8 +3,8 @@ layout: home
 permalink: index.html
 
 # Please update this with your repository name and project title
-repository-name: eYY-co2060-project-template
-title: Project Template
+repository-name: e23-co2060-OrthoFlow
+title: Digitisation and Workflow Automation of Orthodontic Case Records
 ---
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template, and add more information required for your own project"
@@ -24,9 +24,10 @@ A HTML template integrated with the given GitHub repository templates, based on 
 ---
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
+-  E/23/214, G.N.N.N.Madusanka, [email](e23214@eng.pdn.ac.lk)
+-  E/23/407, S.A.A.Upek, [email](e23407@eng.pdn.ac.lk)
+-  E/23/403, D.J.Thotagamuwa, [email](e23403@eng.pdn.ac.lk)
+-  E/23/054, M.V.R.Dayananda, [email](e23054@eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
@@ -44,24 +45,95 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 ## Introduction
 
-Description of the real world problem and solution, impact
+Orthodontic diagnosis and treatment planning depend on structured clinical records including patient histories, diagnostic indices, radiographs, photographs, and progress documentation. In many academic and public healthcare settings, these records are maintained through paper-based or fragmented digital systems, resulting in inefficiencies, inconsistent data handling, and difficulty in longitudinal patient tracking.
+
+This project proposes the development of **OrthoFlow**, a secure web-based system designed to digitise orthodontic case records and automate clinical workflows. The system supports structured electronic patient records, integration of digitised radiographs, historical treatment tracking, and automated appointment reminders through messaging services.
+
+By aligning software engineering practices with real clinical workflows, the project aims to improve data accessibility, clinical decision support, and operational efficiency, while providing a scalable foundation for future healthcare innovations.
 
 
 ## Solution Architecture
 
-High level diagram + description
+The system follows a layered client–server architecture:
+
+### Presentation Layer
+- Web-based interface accessible through browsers
+- Supports clinicians and administrative staff
+- Provides patient record forms, radiograph viewing, scheduling, and login
+
+### Application Layer
+- Backend server managing system logic
+- Authentication and role-based access
+- Record management modules
+- History tracking
+- Notification scheduling
+
+### Data & Service Layer
+- Relational database storing patient and clinical data
+- Media storage for radiographs and attachments
+- SMS API integration for reminders
+
+This modular structure ensures scalability, maintainability, and secure data handling.
 
 ## Software Designs
 
-Detailed designs with many sub-sections
+### Functional Components
+- Patient record digitisation and management
+- Radiograph upload and retrieval
+- Treatment history timeline tracking
+- Appointment scheduling system
+- SMS reminder service
+- Role-based user management
+
+### Non-Functional Considerations
+- Security through authentication and encrypted communication
+- High usability and intuitive UI design
+- Reliable data storage with backup strategies
+- Scalable architecture for future expansion
+- Maintainable modular codebase
+
+### Technology Stack (Proposed)
+- Frontend: React / Angular
+- Backend: Node.js / Django
+- Database: PostgreSQL / MySQL
+- Messaging Integration: SMS Gateway API
+- Deployment: Cloud/Docker environment
 
 ## Testing
 
-Testing done on software : detailed + summarized results
+### Unit Testing
+- Verification of individual modules
+- Form validation checks
+- API response testing
+
+### Integration Testing
+- Backend–database communication
+- Media upload functionality
+- Messaging service interaction
+
+### User Acceptance Testing
+- Workflow evaluation with intended users
+- Interface usability checks
+- Functional verification of scheduling and record tracking
+
+### Summary
+Testing ensures system reliability, data integrity, and usability before deployment.
+
+---
 
 ## Conclusion
 
-What was achieved, future developments, commercialization plans
+This project demonstrates the application of software engineering principles to address real-world healthcare challenges. By digitising orthodontic case records and automating workflows, the system improves accessibility, accuracy, and clinical efficiency.
+
+Future enhancements may include:
+- AI-assisted diagnosis support
+- Analytics-based treatment outcome evaluation
+- Integration with hospital information systems
+- Mobile application extensions
+
+The developed platform serves as both a practical healthcare solution and an academic exploration of secure medical software development.
+
+---
 
 ## Links
 
@@ -72,3 +144,12 @@ What was achieved, future developments, commercialization plans
 
 [//]: # (Please refer this to learn more about Markdown syntax)
 [//]: # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+
+
+
+
+
+
+
+
+
