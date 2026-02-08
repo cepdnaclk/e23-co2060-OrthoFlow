@@ -1,57 +1,56 @@
-___
-# DELETE THIS INSTRUCTIONS AND ADD AN INTRODUCTION ABOUT YOUR PROJECT
-___
+# OrthoFlow
+## Digitisation and Workflow Automation of Orthodontic Case Records
 
-# eYY-co2060-project-template
+OrthoFlow is a web-based system designed to digitise orthodontic patient records and automate clinical workflows.  
+The platform replaces paper-based documentation with structured digital records, integrates radiographs into patient folders, tracks treatment history, and sends automated appointment reminders — improving efficiency, accessibility, and continuity of care.
 
-This is a sample repository you can use for your Software Systems Design Project. Once you followed these instructions, remove the text and add a brief introduction to here.
+---
 
-### Enable GitHub Pages
+## Features
 
-You can put the things to be shown in GitHub pages into the _docs/_ folder. Both html and md file formats are supported. You need to go to settings and enable GitHub pages and select _main_ branch and _docs_ folder from the dropdowns, as shown in the below image.
+- Digital patient record management  
+- Radiograph upload and integration  
+- Treatment history tracking  
+- Appointment scheduling  
+- SMS/message reminder system  
+- Role-based secure access  
+- Data validation and structured storage  
 
-![image](https://user-images.githubusercontent.com/11540782/98789936-028d3600-2429-11eb-84be-aaba665fdc75.png)
+---
 
-### Special Configurations
+## System Overview
 
-These projects will be automatically added into [https://projects.ce.pdn.ac.lk](). If you like to show more details about your project on this site, you can fill the parameters in the file, _/docs/index.json_
+OrthoFlow follows a layered client–server architecture:
 
-```
-{
-  "title": "This is the title of the project",
-  "team": [
-    {
-      "name": "Team Member Name 1",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    },
-    {
-      "name": "Team Member Name 2",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    },
-    {
-      "name": "Team Member Name 3",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    }
-  ],
-  "supervisors": [
-    {
-      "name": "Dr. Supervisor 1",
-      "email": "email@eng.pdn.ac.lk"
-    },
-    {
-      "name": "Supervisor 2",
-      "email": "email@eng.pdn.ac.lk"
-    }
-  ],
-  "tags": ["Web", "Software Systems", "CO2060"]
-}
-```
+### Presentation Layer
+- Web interface for clinicians and administrators  
+- Record entry, media viewing, scheduling  
 
-Once you filled this _index.json_ file, please verify the syntax is correct. (You can use [this](https://jsonlint.com/) tool).
+### Application Layer
+- Authentication and access control  
+- Business logic and workflow automation  
+- Notification services  
 
-### Page Theme
+### Data & Services Layer
+- Relational database for structured records  
+- Media storage for radiographs and documents  
+- External messaging API integration  
 
-A custom theme integrated with this GitHub Page, which is based on [github.com/cepdnaclk/eYY-project-theme](https://github.com/cepdnaclk/eYY-project-theme). If you like to remove this default theme, you can remove the file, _docs/\_config.yml_ and use HTML based website.
+---
+
+## Technology Stack (Proposed)
+
+| Layer | Technology |
+|------|------------|
+| Frontend | React  |
+| Backend | Node.js / Express.js |
+| Database | PostgreSQL  |
+| Messaging | SMS API |
+| Deployment | Docker / Cloud |
+
+---
+
+## Installation 
+
+Execution instructions will be added after backend and frontend integration
+
