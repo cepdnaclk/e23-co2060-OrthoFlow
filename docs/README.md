@@ -42,7 +42,6 @@ The system is developed using **Spring Boot** (backend), **React** (frontend), a
 - **Database:** Structured schema to capture patient records, diagnostics, and clinical media.
 - **Messaging Service:** SMS/email notifications for patient appointments.
 
-*High-level diagram can be added here (e.g., `solution_architecture.png` in `/images/`).*
 
 ---
 
