@@ -1,57 +1,67 @@
-___
-# DELETE THIS INSTRUCTIONS AND ADD AN INTRODUCTION ABOUT YOUR PROJECT
-___
+# Digitisation and Workflow Automation of Orthodontic Case Records
 
-# eYY-co2060-project-template
+This project aims to design and implement a secure, modular, and clinically aligned digital system for managing Orthodontic Case Records. Working closely with Dr. HSK Ratnatilake and her team from the Department of Community Dental at the Faculty of Dental Sciences, this system captures and organizes patient information, diagnostic data, clinical media, and treatment progress in a streamlined, digital workflow.
 
-This is a sample repository you can use for your Software Systems Design Project. Once you followed these instructions, remove the text and add a brief introduction to here.
+The system supports structured data capture across the full orthodontic lifecycle—from initial assessment and diagnosis, through treatment planning and progress monitoring, to post-treatment retention. Additional features include patient history tracing, integration of digital radiographs into patient folders, and automated messaging (SMS/email) for appointment reminders.
 
-### Enable GitHub Pages
+This project bridges Software Engineering and Healthcare Digital Transformation, providing a real-world platform for students to translate complex clinical workflows into well-engineered software solutions.
 
-You can put the things to be shown in GitHub pages into the _docs/_ folder. Both html and md file formats are supported. You need to go to settings and enable GitHub pages and select _main_ branch and _docs_ folder from the dropdowns, as shown in the below image.
+---
 
-![image](https://user-images.githubusercontent.com/11540782/98789936-028d3600-2429-11eb-84be-aaba665fdc75.png)
+## Features
 
-### Special Configurations
+- **Digital Patient Records:** All clinical data, including history, examinations, and treatment progress, are captured digitally for accuracy and ease of access.  
+- **Radiograph Integration:** Digital radiographs are merged into individual patient folders for comprehensive record-keeping.  
+- **Patient History Tracking:** Enables longitudinal tracking of patient outcomes and treatment progress.  
+- **Automated Messaging:** SMS or message system for notifying patients about upcoming appointments or treatment schedules.  
+- **Secure Role-Based Access:** Ensures sensitive medical data is protected and accessible only to authorized personnel.  
+- **Conditional Form Logic:** Supports complex clinical forms with validations and workflow automation.  
+- **Timeline-Based Treatment Tracking:** Visualizes the orthodontic treatment lifecycle for clinicians and patients.  
 
-These projects will be automatically added into [https://projects.ce.pdn.ac.lk](). If you like to show more details about your project on this site, you can fill the parameters in the file, _/docs/index.json_
+---
 
-```
-{
-  "title": "This is the title of the project",
-  "team": [
-    {
-      "name": "Team Member Name 1",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    },
-    {
-      "name": "Team Member Name 2",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    },
-    {
-      "name": "Team Member Name 3",
-      "email": "email@eng.pdn.ac.lk",
-      "eNumber": "E/yy/xxx"
-    }
-  ],
-  "supervisors": [
-    {
-      "name": "Dr. Supervisor 1",
-      "email": "email@eng.pdn.ac.lk"
-    },
-    {
-      "name": "Supervisor 2",
-      "email": "email@eng.pdn.ac.lk"
-    }
-  ],
-  "tags": ["Web", "Software Systems", "CO2060"]
-}
-```
+## Tech Stack
 
-Once you filled this _index.json_ file, please verify the syntax is correct. (You can use [this](https://jsonlint.com/) tool).
+- **Backend:** Spring Boot  
+- **Frontend:** React  
+- **Database:** PostgreSQL  
 
-### Page Theme
+---
 
-A custom theme integrated with this GitHub Page, which is based on [github.com/cepdnaclk/eYY-project-theme](https://github.com/cepdnaclk/eYY-project-theme). If you like to remove this default theme, you can remove the file, _docs/\_config.yml_ and use HTML based website.
+## Importance and Relevance
+
+**Healthcare Benefits:**
+
+- Improves diagnostic consistency and clinical decision-making.  
+- Enables longitudinal tracking of patient outcomes.  
+- Supports clinical audits, research, and quality assurance.  
+- Reduces documentation errors and improves continuity of care.  
+- Lays groundwork for AI-assisted diagnosis and treatment planning.  
+
+**Software Engineering Benefits:**
+
+- Hands-on experience translating clinical workflows into software requirements.  
+- Designing modular, maintainable healthcare information systems.  
+- Implementing secure and audit-friendly data models.  
+- Media management for images, radiographs, and attachments.  
+- Human-centred design in a safety-critical domain.  
+
+---
+
+## Expected Learning Outcomes
+
+By completing this project, students will gain experience in:  
+
+- Translating real clinical workflows into software requirements.  
+- Designing modular and maintainable software systems for healthcare.  
+- Implementing validation, conditional logic, and audit-friendly features.  
+- Applying software engineering principles in a regulated, real-world domain.  
+- Understanding how software improves healthcare delivery and diagnosis.  
+
+---
+
+## Broader Impact
+
+This system can be deployed in academic dental clinics and adapted for public healthcare institutions, contributing to digitally enabled, data-driven orthodontic care. It also serves as a foundation for future innovations like analytics-driven outcome evaluation and AI-supported orthodontic diagnosis.
+
+---
