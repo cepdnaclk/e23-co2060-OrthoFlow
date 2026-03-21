@@ -2,7 +2,7 @@
 layout: home
 permalink: index.html
 
-repository-name: eYY-co2060-project-template
+repository-name: e23-co2060-OrthoFlow
 title: Digitisation and Workflow Automation of Orthodontic Case Records
 ---
 
