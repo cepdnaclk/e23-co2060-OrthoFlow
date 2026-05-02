@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { C, PATIENT_STATUSES } from "../constants.js";
 import { registerPatient, updatePatient, uploadRadiograph, deleteRadiograph } from "../api.js";
 import { AppLayout } from "../components.jsx";
+import { toast, customAlert, confirmDialog, promptDialog } from "../dialogs.js";
 
 const generateRegNum = () => {
   const p1 = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -61,6 +62,8 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
   });
   const [errors, setErrors] = useState({});
   const [radiographs, setRadiographs] = useState(editPatient?.radiographs || []);
+  // For new patients: staged images awaiting upload after patient creation
+  const [pendingImages, setPendingImages] = useState([]); // [{ file, description, category, previewUrl }]
   const radioInputRef = useRef(null);
   const caseInputRef = useRef(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -70,26 +73,41 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
     const file = e.target.files[0];
     if (!file) return;
 
-    const description = window.prompt(`Enter a description for this ${category === 'CASE_HISTORY' ? 'case history image' : 'radiograph'}:`, category === 'CASE_HISTORY' ? 'Pre-treatment photo' : 'Radiograph');
+    const description = await promptDialog(`Enter a description for this ${category === 'CASE_HISTORY' ? 'case history image' : 'radiograph'}:`, category === 'CASE_HISTORY' ? 'Pre-treatment photo' : 'Radiograph');
     if (description === null) {
       e.target.value = null;
       return;
     }
 
-    setUploadingImage(true);
-    const { data, error } = await uploadRadiograph(editPatient.id, file, description, category);
-    if (error) alert("Failed to upload image: " + error);
-    else if (data) setRadiographs(prev => [data, ...prev]);
-    
-    setUploadingImage(false);
+    if (editPatient) {
+      // Edit mode: upload immediately
+      setUploadingImage(true);
+      const { data, error } = await uploadRadiograph(editPatient.id, file, description, category);
+      if (error) customAlert("Failed to upload image: " + error);
+      else if (data) setRadiographs(prev => [data, ...prev]);
+      setUploadingImage(false);
+    } else {
+      // New patient mode: stage for later
+      const previewUrl = URL.createObjectURL(file);
+      setPendingImages(prev => [{ file, description, category, previewUrl, id: previewUrl }, ...prev]);
+    }
     e.target.value = null;
   };
 
   const handleDeleteImage = async (imageId) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
-    const { error } = await deleteRadiograph(imageId);
-    if (error) alert("Failed to delete image: " + error);
-    else setRadiographs(prev => prev.filter(r => r.id !== imageId));
+    if (editPatient) {
+      if (!(await confirmDialog("Delete Image", "Are you sure you want to delete this image?"))) return;
+      const { error } = await deleteRadiograph(imageId);
+      if (error) customAlert("Failed to delete image: " + error);
+      else setRadiographs(prev => prev.filter(r => r.id !== imageId));
+    } else {
+      // Remove from pending
+      setPendingImages(prev => {
+        const item = prev.find(p => p.id === imageId);
+        if (item) URL.revokeObjectURL(item.previewUrl);
+        return prev.filter(p => p.id !== imageId);
+      });
+    }
   };
 
   const set = (key, val) => {
@@ -116,17 +134,32 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
     let res;
     if (editPatient) {
       res = await updatePatient(editPatient.id, form);
+      const { data, error } = res;
+      setSubmitting(false);
+      if (error) {
+        setSubmitError(error);
+      } else {
+        toast("Patient updated successfully", "success");
+        if (onSave) onSave({ ...(data || form), radiographs });
+      }
     } else {
       res = await registerPatient(form);
-    }
-    
-    const { data, error } = res;
-    setSubmitting(false);
-    if (error) {
-      setSubmitError(error);
-    } else {
+      const { data, error } = res;
+      if (error) {
+        setSubmitting(false);
+        setSubmitError(error);
+        return;
+      }
+      // Upload any staged images now that we have the patient ID
+      if (pendingImages.length > 0 && data?.id) {
+        for (const img of pendingImages) {
+          await uploadRadiograph(data.id, img.file, img.description, img.category);
+        }
+      }
+      setSubmitting(false);
+      toast("Patient created successfully", "success");
       if (onSave) onSave({ ...(data || form), radiographs });
-      if (!editPatient) setPage("patients");
+      setPage("patients");
     }
   };
 
@@ -210,35 +243,35 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
           <TextArea label="Notes" fieldKey="notes" placeholder="Additional notes…" form={form} set={set} errors={errors} />
         </Section>
 
-        {/* ── Image Management (Edit Mode Only) ── */}
-        {editPatient && (
+        {/* ── Image Management ── */}
+        {isClinician && (
           <Section title="Image Management">
             {/* Case History */}
             <div style={{ flex: "0 0 100%", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Case History Images</div>
-                {isClinician && (
-                  <>
-                    <input type="file" accept="image/*" ref={caseInputRef} style={{ display: "none" }} onChange={(e) => handleFileUpload(e, "CASE_HISTORY")} />
-                    <button onClick={() => caseInputRef.current?.click()} disabled={uploadingImage} style={{ background: C.gray100, color: C.gray700, border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}>
-                      {uploadingImage ? "Uploading..." : "Upload Case History"}
-                    </button>
-                  </>
-                )}
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Case History Images</div>
+                  {!editPatient && <div style={{ fontSize: 11, color: C.gray400, marginTop: 2 }}>Images will be uploaded after patient is created.</div>}
+                </div>
+                <>
+                  <input type="file" accept="image/*" ref={caseInputRef} style={{ display: "none" }} onChange={(e) => handleFileUpload(e, "CASE_HISTORY")} />
+                  <button onClick={() => caseInputRef.current?.click()} disabled={uploadingImage} style={{ background: C.blue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}>
+                    {uploadingImage ? "Uploading..." : "+ Add Image"}
+                  </button>
+                </>
               </div>
-              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
-                {radiographs.filter(r => r.category === "CASE_HISTORY").length > 0 ? (
-                  radiographs.filter(r => r.category === "CASE_HISTORY").map(r => (
-                    <div key={r.id} style={{ position: "relative", minWidth: 120, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                      {isClinician && (
-                        <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12, lineHeight: 1 }}>×</button>
-                      )}
-                      <img src={`http://localhost:8080${r.fileUrl}`} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
-                      <div style={{ fontSize: 11, color: C.gray700, marginTop: 4 }}>{r.description}</div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingBottom: 8 }}>
+                {(editPatient ? radiographs.filter(r => r.category === "CASE_HISTORY") : pendingImages.filter(r => r.category === "CASE_HISTORY")).length > 0 ? (
+                  (editPatient ? radiographs.filter(r => r.category === "CASE_HISTORY") : pendingImages.filter(r => r.category === "CASE_HISTORY")).map(r => (
+                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: "#fafafa" }}>
+                      <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
+                      <img src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
+                      {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>
                   ))
                 ) : (
-                  <div style={{ fontSize: 12, color: C.gray400 }}>No case history images.</div>
+                  <div style={{ fontSize: 12, color: C.gray400, padding: "12px 0" }}>No case history images added yet.</div>
                 )}
               </div>
             </div>
@@ -246,29 +279,29 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
             {/* Radiographs */}
             <div style={{ flex: "0 0 100%" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Radiographs</div>
-                {isClinician && (
-                  <>
-                    <input type="file" accept="image/*" ref={radioInputRef} style={{ display: "none" }} onChange={(e) => handleFileUpload(e, "RADIOGRAPH")} />
-                    <button onClick={() => radioInputRef.current?.click()} disabled={uploadingImage} style={{ background: C.gray100, color: C.gray700, border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}>
-                      {uploadingImage ? "Uploading..." : "Upload Radiograph"}
-                    </button>
-                  </>
-                )}
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Radiographs</div>
+                  {!editPatient && <div style={{ fontSize: 11, color: C.gray400, marginTop: 2 }}>Images will be uploaded after patient is created.</div>}
+                </div>
+                <>
+                  <input type="file" accept="image/*" ref={radioInputRef} style={{ display: "none" }} onChange={(e) => handleFileUpload(e, "RADIOGRAPH")} />
+                  <button onClick={() => radioInputRef.current?.click()} disabled={uploadingImage} style={{ background: C.blue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}>
+                    {uploadingImage ? "Uploading..." : "+ Add Radiograph"}
+                  </button>
+                </>
               </div>
-              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
-                {radiographs.filter(r => r.category !== "CASE_HISTORY").length > 0 ? (
-                  radiographs.filter(r => r.category !== "CASE_HISTORY").map(r => (
-                    <div key={r.id} style={{ position: "relative", minWidth: 120, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                      {isClinician && (
-                        <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12, lineHeight: 1 }}>×</button>
-                      )}
-                      <img src={`http://localhost:8080${r.fileUrl}`} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
-                      <div style={{ fontSize: 11, color: C.gray700, marginTop: 4 }}>{r.description}</div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingBottom: 8 }}>
+                {(editPatient ? radiographs.filter(r => r.category !== "CASE_HISTORY") : pendingImages.filter(r => r.category === "RADIOGRAPH")).length > 0 ? (
+                  (editPatient ? radiographs.filter(r => r.category !== "CASE_HISTORY") : pendingImages.filter(r => r.category === "RADIOGRAPH")).map(r => (
+                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: "#fafafa" }}>
+                      <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
+                      <img src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
+                      {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>
                   ))
                 ) : (
-                  <div style={{ fontSize: 12, color: C.gray400 }}>No radiographs.</div>
+                  <div style={{ fontSize: 12, color: C.gray400, padding: "12px 0" }}>No radiographs added yet.</div>
                 )}
               </div>
             </div>

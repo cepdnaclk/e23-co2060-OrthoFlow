@@ -4,6 +4,7 @@ import { C } from "../constants.js";
 import { AppLayout, Badge, Avatar } from "../components.jsx";
 import { useRef } from "react";
 import { getPatient, deletePatient, uploadRadiograph, deleteRadiograph, getPatientAccess, grantPatientAccess, revokePatientAccess, getStudents } from "../api.js";
+import { toast, customAlert, confirmDialog, promptDialog } from "../dialogs.js";
 
 /**
  * PatientDetailPage
@@ -52,16 +53,16 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
     if (!selectedStudent) return;
     setAccessLoading(true);
     const res = await grantPatientAccess(patient.id, selectedStudent);
-    if (res.error) alert(res.error);
+    if (res.error) customAlert(res.error);
     else loadAccess(patient.id);
     setAccessLoading(false);
   };
 
   const handleRevokeAccess = async (userId) => {
-    if (!window.confirm("Revoke access for this student?")) return;
+    if (!(await confirmDialog("Revoke Access", "Revoke access for this student?"))) return;
     setAccessLoading(true);
     const res = await revokePatientAccess(patient.id, userId);
-    if (res.error) alert(res.error);
+    if (res.error) customAlert(res.error);
     else loadAccess(patient.id);
     setAccessLoading(false);
   };
@@ -70,7 +71,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
     const file = e.target.files[0];
     if (!file) return;
 
-    const description = window.prompt(`Enter a description for this ${category === 'CASE_HISTORY' ? 'case history image' : 'radiograph'}:`, category === 'CASE_HISTORY' ? 'Pre-treatment photo' : 'Radiograph');
+    const description = await promptDialog(`Enter a description for this ${category === 'CASE_HISTORY' ? 'case history image' : 'radiograph'}:`, category === 'CASE_HISTORY' ? 'Pre-treatment photo' : 'Radiograph');
     if (description === null) {
       e.target.value = null;
       return;
@@ -80,7 +81,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
     const { data, error } = await uploadRadiograph(patient.id, file, description, category);
     
     if (error) {
-      alert("Failed to upload image: " + error);
+      customAlert("Failed to upload image: " + error);
     } else if (data) {
       // Append the new radiograph to state
       setPatient(prev => ({
@@ -94,10 +95,10 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
   };
 
   const handleDeleteImage = async (imageId) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
+    if (!(await confirmDialog("Delete Image", "Are you sure you want to delete this image?"))) return;
     const { error } = await deleteRadiograph(imageId);
     if (error) {
-      alert("Failed to delete image: " + error);
+      customAlert("Failed to delete image: " + error);
     } else {
       setPatient(prev => ({
         ...prev,
@@ -234,7 +235,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={async () => {
-                    if (window.confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
+                    if (await confirmDialog("Delete Patient", "Are you sure you want to delete this patient? This action cannot be undone.")) {
                       setLoading(true);
                       await deletePatient(patient.id);
                       setPage("patients");
@@ -408,11 +409,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                   </div>
                 ))
               ) : (
-                <div className="card-hover" style={{ minWidth: 200, border: `1px dashed ${C.gray300}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
-                  <img src="/radiograph_placeholder.png" alt="Placeholder" style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, opacity: 0.6 }} />
-                  <div style={{ fontSize: 12, color: C.gray600, marginTop: 4, fontWeight: 600 }}>Frontal Intraoral</div>
-                  <div style={{ fontSize: 10, color: C.gray400 }}>No case history images uploaded</div>
-                </div>
+                <div style={{ fontSize: 13, color: C.gray400, padding: "12px 0" }}>No case history images uploaded.</div>
               )}
             </div>
           </div>
@@ -467,11 +464,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                   </div>
                 ))
               ) : (
-                <div className="card-hover" style={{ minWidth: 200, border: `1px dashed ${C.gray300}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
-                  <img src="/radiograph_placeholder.png" alt="Placeholder Radiograph" style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, opacity: 0.6 }} />
-                  <div style={{ fontSize: 12, color: C.gray600, marginTop: 4, fontWeight: 600 }}>Panoramic X-Ray</div>
-                  <div style={{ fontSize: 10, color: C.gray400 }}>No patient radiographs uploaded</div>
-                </div>
+                <div style={{ fontSize: 13, color: C.gray400, padding: "12px 0" }}>No patient radiographs uploaded.</div>
               )}
             </div>
           </div>

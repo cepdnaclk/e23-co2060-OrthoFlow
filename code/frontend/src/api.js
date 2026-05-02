@@ -92,6 +92,14 @@ export async function registerAdminUser() {
   return request("POST", "/auth/register", { username: "admin", password: "password", role: "ADMIN" });
 }
 
+export async function getMyProfile() {
+  return request("GET", "/auth/me");
+}
+
+export async function updateMyProfile(data) {
+  return request("PUT", "/auth/me", data);
+}
+
 // ── Patients ──────────────────────────────────────────────────────────────────
 
 export async function registerPatient(formData) {

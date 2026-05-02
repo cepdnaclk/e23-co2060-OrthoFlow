@@ -117,7 +117,61 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/me", authenticateToken, async (req, res) => {
-  res.json({ user: req.user });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        fullName: true,
+        email: true,
+        regNumber: true,
+        createdAt: true
+      }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update own profile
+router.put("/me", authenticateToken, async (req, res) => {
+  try {
+    const { fullName, email, regNumber, password } = req.body;
+
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (email !== undefined) updateData.email = email;
+    if (regNumber !== undefined) updateData.regNumber = regNumber;
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        fullName: true,
+        email: true,
+        regNumber: true,
+        createdAt: true
+      }
+    });
+
+    res.json({ user, message: "Profile updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = {

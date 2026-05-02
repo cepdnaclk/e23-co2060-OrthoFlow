@@ -92,7 +92,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
               Dashboard
             </h1>
             <div style={{ color: C.gray500, fontSize: 13, marginTop: 4 }}>
-              Sunday, April 19, 2026
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
           {isClinician && (
