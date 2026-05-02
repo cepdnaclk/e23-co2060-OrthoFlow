@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  username      String          @unique
+  password      String
+  role          String          @default("STAFF")
+  fullName      String?
+  email         String?
+  regNumber     String?
+  createdAt     DateTime        @default(now())
+  patientAccess PatientAccess[]
+}
+
+model Patient {
+  id             String        @id @default(uuid())
+  patientId      String        @unique
+  name           String
+  initials       String?
+  status         String        @default("Assessment")
+  dob            DateTime?
+  gender         String?
+  phone          String?
+  email          String?
+  address        String?
+  chiefComplaint String?
+  medicalHistory String?
+  dentalHistory  String?
+  allergies      String?
+  referredBy     String?
+  notes          String?
+  guardian       String?
+  guardianPhone  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  appointments   Appointment[]
+  historyLogs    HistoryLog[]
+  radiographs    Radiograph[]
+  patientAccess  PatientAccess[]
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  patientId String
+  date      DateTime
+  time      String
+  type      String
+  duration  String
+  status    String
+  createdAt DateTime @default(now())
+  patient   Patient  @relation(fields: [patientId], references: [id])
+}
+
+model Radiograph {
+  id          Int      @id @default(autoincrement())
+  patientId   String
+  category    String   @default("RADIOGRAPH")
+  fileUrl     String
+  uploadDate  DateTime @default(now())
+  description String?
+  patient     Patient  @relation(fields: [patientId], references: [id])
+}
+
+model HistoryLog {
+  id        Int      @id @default(autoincrement())
+  patientId String
+  action    String
+  timestamp DateTime @default(now())
+  details   String?
+  patient   Patient  @relation(fields: [patientId], references: [id])
+}
+
+model PatientAccess {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  patientId String
+  grantedBy Int      
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, patientId])
+}
