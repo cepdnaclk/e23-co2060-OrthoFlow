@@ -7,7 +7,6 @@ import NewPatientPage    from "./pages/NewPatientPage.jsx";
 import AppointmentsPage  from "./pages/AppointmentsPage.jsx";
 import ReportsPage       from "./pages/ReportsPage.jsx";
 import SettingsPage      from "./pages/SettingsPage.jsx";
-import UsersPage         from "./pages/UsersPage.jsx";
 
 /**
  * App — central router.
@@ -53,7 +52,7 @@ export default function App() {
     return <LoginPage onLogin={(u) => { 
       localStorage.setItem("ortho_user", JSON.stringify(u));
       setUser(u); 
-      setPage(u.role === "ADMIN" ? "users" : "dashboard"); 
+      setPage("dashboard"); 
     }} />;
   }
 
@@ -67,17 +66,6 @@ export default function App() {
     setUser(null);
     setPage("dashboard");
   };
-
-  if (user?.role === "ADMIN") {
-    if (page === "settings") {
-      return <SettingsPage setPage={nav} setSelectedPatient={setSelectedPatient} user={user} onLogout={handleLogout} />;
-    }
-    return <UsersPage setPage={nav} setSelectedPatient={setSelectedPatient} onLogout={handleLogout} user={user} />;
-  }
-
-  if (user?.role === "STUDENT" && (page === "appointments" || page === "reports")) {
-    return <DashboardPage setPage={nav} setSelectedPatient={setSelectedPatient} onLogout={handleLogout} user={user} />;
-  }
 
   if (page === "dashboard")
     return <DashboardPage setPage={nav} setSelectedPatient={setSelectedPatient} onLogout={handleLogout} user={user} />;

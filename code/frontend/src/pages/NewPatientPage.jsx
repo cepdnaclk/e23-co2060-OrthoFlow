@@ -64,7 +64,7 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
   const radioInputRef = useRef(null);
   const caseInputRef = useRef(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
+  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
 
   const handleFileUpload = async (e, category) => {
     const file = e.target.files[0];

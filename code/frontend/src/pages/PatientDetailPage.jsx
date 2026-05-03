@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { C } from "../constants.js";
 import { AppLayout, Badge, Avatar } from "../components.jsx";
 import { useRef } from "react";
-import { getPatient, deletePatient, uploadRadiograph, deleteRadiograph, getPatientAccess, grantPatientAccess, revokePatientAccess, getStudents } from "../api.js";
+import { getPatient, deletePatient, uploadRadiograph } from "../api.js";
 
 /**
  * PatientDetailPage
@@ -12,59 +11,13 @@ import { getPatient, deletePatient, uploadRadiograph, deleteRadiograph, getPatie
  *   setPage: (page: string) => void
  */
 export default function PatientDetailPage({ patient: initialPatient, setPage, setSelectedPatient, onLogout, user }) {
-  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
+  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
   const [patient, setPatient]   = useState(initialPatient);
   const [loading, setLoading]   = useState(false);
   const [fetchError, setFetchError] = useState("");
   const radioInputRef = useRef(null);
   const caseInputRef = useRef(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [fullScreenImage, setFullScreenImage] = useState(null);
-
-  const [accessList, setAccessList] = useState([]);
-  const [studentsList, setStudentsList] = useState([]);
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [accessLoading, setAccessLoading] = useState(false);
-
-  useEffect(() => {
-    if (isClinician && initialPatient?.id) {
-      loadAccess(initialPatient.id);
-      loadStudents();
-    }
-  }, [isClinician, initialPatient?.id]);
-
-  const loadAccess = async (pid) => {
-    setAccessLoading(true);
-    const res = await getPatientAccess(pid);
-    if (!res.error) setAccessList(res.data);
-    setAccessLoading(false);
-  };
-
-  const loadStudents = async () => {
-    const res = await getStudents();
-    if (!res.error) {
-        setStudentsList(res.data);
-        if (res.data.length > 0) setSelectedStudent(res.data[0].id);
-    }
-  };
-
-  const handleGrantAccess = async () => {
-    if (!selectedStudent) return;
-    setAccessLoading(true);
-    const res = await grantPatientAccess(patient.id, selectedStudent);
-    if (res.error) alert(res.error);
-    else loadAccess(patient.id);
-    setAccessLoading(false);
-  };
-
-  const handleRevokeAccess = async (userId) => {
-    if (!window.confirm("Revoke access for this student?")) return;
-    setAccessLoading(true);
-    const res = await revokePatientAccess(patient.id, userId);
-    if (res.error) alert(res.error);
-    else loadAccess(patient.id);
-    setAccessLoading(false);
-  };
 
   const handleFileUpload = async (e, category) => {
     const file = e.target.files[0];
@@ -103,7 +56,6 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
         ...prev,
         radiographs: (prev.radiographs || []).filter(r => r.id !== imageId)
       }));
-      setFullScreenImage(null);
     }
   };
 
@@ -396,13 +348,16 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
               {(patient.radiographs || []).filter(r => r.category === "CASE_HISTORY").length > 0 ? (
                 (patient.radiographs || []).filter(r => r.category === "CASE_HISTORY").map(r => (
-                  <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                    <img 
-                      src={`http://localhost:8080${r.fileUrl}`} 
-                      alt={r.description} 
-                      style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
-                      onClick={() => setFullScreenImage(r)}
-                    />
+                  <div key={r.id} className="card-hover" style={{ position: "relative", minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
+                    {isClinician && (
+                      <button
+                        onClick={() => handleDeleteImage(r.id)}
+                        style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
+                    )}
+                    <img src={`http://localhost:8080${r.fileUrl}`} alt={r.description} style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4 }} />
                     <div style={{ fontSize: 12, color: C.gray700, marginTop: 4 }}>{r.description}</div>
                     <div style={{ fontSize: 10, color: C.gray400 }}>{new Date(r.uploadDate).toLocaleDateString()}</div>
                   </div>
@@ -455,13 +410,16 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
               {(patient.radiographs || []).filter(r => r.category !== "CASE_HISTORY").length > 0 ? (
                 (patient.radiographs || []).filter(r => r.category !== "CASE_HISTORY").map(r => (
-                  <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                    <img 
-                      src={`http://localhost:8080${r.fileUrl}`} 
-                      alt={r.description} 
-                      style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
-                      onClick={() => setFullScreenImage(r)}
-                    />
+                  <div key={r.id} className="card-hover" style={{ position: "relative", minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
+                    {isClinician && (
+                      <button
+                        onClick={() => handleDeleteImage(r.id)}
+                        style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
+                    )}
+                    <img src={`http://localhost:8080${r.fileUrl}`} alt={r.description} style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4 }} />
                     <div style={{ fontSize: 12, color: C.gray700, marginTop: 4 }}>{r.description}</div>
                     <div style={{ fontSize: 10, color: C.gray400 }}>{new Date(r.uploadDate).toLocaleDateString()}</div>
                   </div>
@@ -476,133 +434,39 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             </div>
           </div>
 
-          {/* ── Access Management ── */}
-          {isClinician && (
-            <div style={{
-              background: "#fff",
-              borderRadius: 14,
-              border: `1px solid ${C.gray200}`,
-              padding: 20,
-              marginBottom: 16,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={C.blue}>
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-                </svg>
-                <div style={{ fontWeight: 700, fontSize: 15, color: C.gray900 }}>Student Access Management</div>
-              </div>
-              
-              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                <select 
-                  value={selectedStudent} 
-                  onChange={e => setSelectedStudent(e.target.value)}
-                  style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${C.gray200}` }}
-                >
-                  {studentsList.map(s => <option key={s.id} value={s.id}>{s.username}</option>)}
-                </select>
-                <button 
-                  onClick={handleGrantAccess} 
-                  disabled={accessLoading || !selectedStudent}
-                  style={{ background: C.blue, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", fontWeight: 600, cursor: "pointer", opacity: (accessLoading || !selectedStudent) ? 0.6 : 1 }}
-                >
-                  Grant Access
-                </button>
-              </div>
-
-              <div>
-                {accessLoading && <div style={{ fontSize: 12, color: C.gray400 }}>Loading...</div>}
-                {!accessLoading && accessList.length === 0 && <div style={{ fontSize: 13, color: C.gray500 }}>No students currently have access.</div>}
-                {!accessLoading && accessList.map(acc => (
-                  <div key={acc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.gray100}` }}>
-                    <div style={{ fontSize: 14, color: C.gray900, fontWeight: 500 }}>{acc.user.username}</div>
-                    <button 
-                      onClick={() => handleRevokeAccess(acc.userId)}
-                      style={{ background: "none", border: "none", color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                    >
-                      Revoke
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ── Patient History ── */}
-          {isClinician && (
-            <div style={{
-              background: "#fff",
-              borderRadius: 14,
-              border: `1px solid ${C.gray200}`,
-              padding: 20,
-              marginBottom: 16,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={C.blue}>
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
-                </svg>
-                <div style={{ fontWeight: 700, fontSize: 15, color: C.gray900 }}>History Trace</div>
-              </div>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {patient.historyLogs && patient.historyLogs.length > 0 ? (
-                  patient.historyLogs.map(log => (
-                    <div key={log.id} style={{ display: "flex", gap: 16, borderBottom: `1px solid ${C.gray100}`, paddingBottom: 12 }}>
-                      <div style={{ color: C.gray500, fontSize: 12, minWidth: 120 }}>
-                        {new Date(log.timestamp).toLocaleString()}
-                      </div>
-                      <div>
-                        <div style={{ color: C.gray900, fontSize: 13, fontWeight: 600 }}>{log.action}</div>
-                        <div style={{ color: C.gray500, fontSize: 12 }}>{log.details}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ color: C.gray400, fontSize: 13 }}>No history logs found.</div>
-                )}
-              </div>
-            </div>
-          )}
-
-        {/* ── Full Screen Image Modal ── */}
-        {fullScreenImage && createPortal(
           <div style={{
-            position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
-            background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center"
+            background: "#fff",
+            borderRadius: 14,
+            border: `1px solid ${C.gray200}`,
+            padding: 20,
+            marginBottom: 16,
           }}>
-            <div style={{ position: "absolute", top: 20, right: 24, display: "flex", gap: 16 }}>
-              {isClinician && (
-                <button
-                  onClick={() => handleDeleteImage(fullScreenImage.id)}
-                  style={{
-                    background: C.red, color: "#fff", border: "none", borderRadius: 8,
-                    padding: "8px 16px", cursor: "pointer", fontWeight: 600, fontSize: 14
-                  }}
-                >
-                  Remove Image
-                </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={C.blue}>
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+              </svg>
+              <div style={{ fontWeight: 700, fontSize: 15, color: C.gray900 }}>History Trace</div>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {patient.historyLogs && patient.historyLogs.length > 0 ? (
+                patient.historyLogs.map(log => (
+                  <div key={log.id} style={{ display: "flex", gap: 16, borderBottom: `1px solid ${C.gray100}`, paddingBottom: 12 }}>
+                    <div style={{ color: C.gray500, fontSize: 12, minWidth: 120 }}>
+                      {new Date(log.timestamp).toLocaleString()}
+                    </div>
+                    <div>
+                      <div style={{ color: C.gray900, fontSize: 13, fontWeight: 600 }}>{log.action}</div>
+                      <div style={{ color: C.gray500, fontSize: 12 }}>{log.details}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: C.gray400, fontSize: 13 }}>No history logs found.</div>
               )}
-              <button
-                onClick={() => setFullScreenImage(null)}
-                style={{
-                  background: "rgba(255,255,255,0.2)", color: "#fff", border: "none", borderRadius: "50%",
-                  width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, lineHeight: 1
-                }}
-              >
-                ×
-              </button>
             </div>
-            <img 
-              src={`http://localhost:8080${fullScreenImage.fileUrl}`} 
-              alt={fullScreenImage.description} 
-              style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} 
-            />
-            <div style={{ position: "absolute", bottom: 20, color: "#fff", fontSize: 16, background: "rgba(0,0,0,0.5)", padding: "8px 16px", borderRadius: 20 }}>
-              {fullScreenImage.description} • {new Date(fullScreenImage.uploadDate).toLocaleDateString()}
-            </div>
-          </div>,
-          document.body
-        )}
-
+          </div>
       </div>
     </AppLayout>
   );

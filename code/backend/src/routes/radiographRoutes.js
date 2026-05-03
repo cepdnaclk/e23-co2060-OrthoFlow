@@ -3,7 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const prisma = require("../prismaClient");
-const { authenticateToken, authorizeRoles } = require("./authRoutes");
+const { authenticateToken } = require("./authRoutes");
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ const upload = multer({ storage });
 
 router.use(authenticateToken);
 
-router.post("/upload/:patientId", authorizeRoles("STAFF"), upload.single("image"), async (req, res) => {
+router.post("/upload/:patientId", upload.single("image"), async (req, res) => {
   try {
     const { patientId } = req.params;
     const { description, category } = req.body;
@@ -55,7 +55,7 @@ router.post("/upload/:patientId", authorizeRoles("STAFF"), upload.single("image"
   }
 });
 
-router.get("/patient/:patientId", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
+router.get("/patient/:patientId", async (req, res) => {
   try {
     const radiographs = await prisma.radiograph.findMany({
       where: { patientId: req.params.patientId },
@@ -67,7 +67,7 @@ router.get("/patient/:patientId", authorizeRoles("STAFF", "STUDENT"), async (req
   }
 });
 
-router.delete("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const radiograph = await prisma.radiograph.findUnique({ where: { id } });

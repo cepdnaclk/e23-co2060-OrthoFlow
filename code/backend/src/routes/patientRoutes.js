@@ -1,12 +1,12 @@
 const express = require("express");
 const prisma = require("../prismaClient");
-const { authenticateToken, authorizeRoles } = require("./authRoutes");
+const { authenticateToken } = require("./authRoutes");
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const data = req.body;
     
@@ -46,22 +46,8 @@ router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    if (req.user.role === "STUDENT") {
-      const accesses = await prisma.patientAccess.findMany({
-        where: { userId: req.user.id },
-        select: { patientId: true }
-      });
-      const patientIds = accesses.map(a => a.patientId);
-      
-      const patients = await prisma.patient.findMany({
-        where: { id: { in: patientIds } },
-        orderBy: { updatedAt: 'desc' }
-      });
-      return res.json(patients);
-    }
-
     const patients = await prisma.patient.findMany({
       orderBy: { updatedAt: 'desc' }
     });
@@ -71,7 +57,7 @@ router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.get("/history/all", authorizeRoles("STAFF"), async (req, res) => {
+router.get("/history/all", async (req, res) => {
   try {
     const logs = await prisma.historyLog.findMany({
       orderBy: { timestamp: 'desc' },
@@ -87,15 +73,8 @@ router.get("/history/all", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.get("/:id", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    if (req.user.role === "STUDENT") {
-      const access = await prisma.patientAccess.findFirst({
-        where: { userId: req.user.id, patientId: req.params.id }
-      });
-      if (!access) return res.status(403).json({ message: "Access denied" });
-    }
-
     const patient = await prisma.patient.findUnique({
       where: { id: req.params.id },
       include: {
@@ -111,7 +90,7 @@ router.get("/:id", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const data = req.body;
     const s = (val) => (val === "" ? null : val);
@@ -157,7 +136,7 @@ router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.delete("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const id = req.params.id;
     
