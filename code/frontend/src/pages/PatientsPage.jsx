@@ -10,7 +10,7 @@ import { getAllPatients } from "../api.js";
  *   setSelectedPatient: (patient: object) => void
  */
 export default function PatientsPage({ setPage, setSelectedPatient, onLogout, user }) {
-  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
+  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
   const [search, setSearch] = useState("");
   const [patients, setPatients] = useState([]); // removed fallback
   const [loadError, setLoadError] = useState("");

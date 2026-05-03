@@ -1,12 +1,12 @@
 const express = require("express");
 const prisma = require("../prismaClient");
-const { authenticateToken } = require("./authRoutes");
+const { authenticateToken, authorizeRoles } = require("./authRoutes");
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/register", async (req, res) => {
+router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
   try {
     const { patientId, date, time, type, duration, status } = req.body;
     
@@ -36,7 +36,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", authorizeRoles("STAFF"), async (req, res) => {
   try {
     const appointments = await prisma.appointment.findMany({
       include: {
@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
 });
 
 // Mock SMS sending endpoint
-router.post("/:id/remind", async (req, res) => {
+router.post("/:id/remind", authorizeRoles("STAFF"), async (req, res) => {
   try {
     const appointment = await prisma.appointment.findUnique({
       where: { id: parseInt(req.params.id) },

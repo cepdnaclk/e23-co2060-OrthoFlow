@@ -9,7 +9,7 @@ import { getAllAppointments, sendReminder, getAllPatients, createAppointment } f
  *   setPage: (page: string) => void
  */
 export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout, user }) {
-  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
+  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);

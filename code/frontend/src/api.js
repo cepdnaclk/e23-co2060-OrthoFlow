@@ -146,3 +146,35 @@ export async function uploadRadiograph(patientId, file, description, category = 
 export async function deleteRadiograph(id) {
   return request("DELETE", `/radiograph/${id}`);
 }
+
+// ── Admin Users ──────────────────────────────────────────────────────────────
+
+export async function getUsers() {
+  return request("GET", "/admin/users");
+}
+
+export async function createUser(data) {
+  return request("POST", "/admin/users", data);
+}
+
+export async function deleteUser(id) {
+  return request("DELETE", `/admin/users/${id}`);
+}
+
+// ── Access Management ────────────────────────────────────────────────────────
+
+export async function getStudents() {
+  return request("GET", "/access/students");
+}
+
+export async function getPatientAccess(patientId) {
+  return request("GET", `/access/patient/${patientId}`);
+}
+
+export async function grantPatientAccess(patientId, userId) {
+  return request("POST", `/access/patient/${patientId}/grant`, { userId });
+}
+
+export async function revokePatientAccess(patientId, userId) {
+  return request("DELETE", `/access/patient/${patientId}/revoke/${userId}`);
+}
