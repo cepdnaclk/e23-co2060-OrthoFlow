@@ -8,15 +8,11 @@ datasource db {
 }
 
 model User {
-  id            Int             @id @default(autoincrement())
-  username      String          @unique
-  password      String
-  role          String          @default("STAFF")
-  fullName      String?
-  email         String?
-  regNumber     String?
-  createdAt     DateTime        @default(now())
-  patientAccess PatientAccess[]
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("DOCTOR")
+  createdAt DateTime @default(now())
 }
 
 model Patient {
@@ -43,7 +39,6 @@ model Patient {
   appointments   Appointment[]
   historyLogs    HistoryLog[]
   radiographs    Radiograph[]
-  patientAccess  PatientAccess[]
 }
 
 model Appointment {
@@ -75,17 +70,4 @@ model HistoryLog {
   timestamp DateTime @default(now())
   details   String?
   patient   Patient  @relation(fields: [patientId], references: [id])
-}
-
-model PatientAccess {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  patientId String
-  grantedBy Int      
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, patientId])
 }

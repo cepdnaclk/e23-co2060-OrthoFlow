@@ -10,7 +10,7 @@ import { getAllPatients, getAllAppointments } from "../api.js";
  *   setSelectedPatient:(patient: object) => void
  */
 export default function DashboardPage({ setPage, setSelectedPatient, onLogout, user }) {
-  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
+  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
   const [patients, setPatients]     = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [backendOnline, setBackendOnline] = useState(null); // null=checking, true, false
@@ -92,7 +92,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
               Dashboard
             </h1>
             <div style={{ color: C.gray500, fontSize: 13, marginTop: 4 }}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              Sunday, April 19, 2026
             </div>
           </div>
           {isClinician && (
@@ -141,41 +141,37 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
         {/* ── Stat Cards ── */}
         <Reveal style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
           <StatCard
-            label={user?.role === "STUDENT" ? "Assigned Patients" : "Total Patients"}
+            label="Total Patients"
             value={patients.length}
             iconColor="#3b82f6"
             iconPath={
               <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
             }
           />
-          {user?.role !== "STUDENT" && (
-            <>
-              <StatCard
-                label="Active Treatment"
-                value={activeCount}
-                iconColor="#10b981"
-                iconPath={
-                  <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z" />
-                }
-              />
-              <StatCard
-                label="Today's Appointments"
-                value={todayCount}
-                iconColor="#f59e0b"
-                iconPath={
-                  <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
-                }
-              />
-              <StatCard
-                label="Upcoming This Week"
-                value={upcoming.length}
-                iconColor="#8b5cf6"
-                iconPath={
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" />
-                }
-              />
-            </>
-          )}
+          <StatCard
+            label="Active Treatment"
+            value={activeCount}
+            iconColor="#10b981"
+            iconPath={
+              <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z" />
+            }
+          />
+          <StatCard
+            label="Today's Appointments"
+            value={todayCount}
+            iconColor="#f59e0b"
+            iconPath={
+              <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
+            }
+          />
+          <StatCard
+            label="Upcoming This Week"
+            value={upcoming.length}
+            iconColor="#8b5cf6"
+            iconPath={
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" />
+            }
+          />
         </Reveal>
 
         {/* ── Lower panels ── */}
@@ -257,77 +253,75 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
           </div>
 
           {/* Upcoming Appointments */}
-          {user?.role !== "STUDENT" && (
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 14,
+              border: `1px solid ${C.gray200}`,
+              padding: 20,
+              flex: "1 1 300px",
+            }}
+          >
             <div
               style={{
-                background: "#fff",
-                borderRadius: 14,
-                border: `1px solid ${C.gray200}`,
-                padding: 20,
-                flex: "1 1 300px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
               }}
             >
               <div
+                style={{ fontWeight: 700, fontSize: 15, color: C.gray900 }}
+              >
+                Upcoming Appointments
+              </div>
+              <button
+                onClick={() => setPage("appointments")}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 16,
+                  background: "none",
+                  border: "none",
+                  color: C.blue,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                View all →
+              </button>
+            </div>
+
+            {upcoming.map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  padding: "12px 0",
+                  borderBottom: `1px solid ${C.gray100}`,
                 }}
               >
                 <div
-                  style={{ fontWeight: 700, fontSize: 15, color: C.gray900 }}
-                >
-                  Upcoming Appointments
-                </div>
-                <button
-                  onClick={() => setPage("appointments")}
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: C.blue,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  View all →
-                </button>
-              </div>
-
-              {upcoming.map((a) => (
-                <div
-                  key={a.id}
-                  style={{
-                    padding: "12px 0",
-                    borderBottom: `1px solid ${C.gray100}`,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
                   }}
                 >
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      color: C.gray900,
                     }}
                   >
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        fontSize: 14,
-                        color: C.gray900,
-                      }}
-                    >
-                      {a.patientName}
-                    </div>
-                    <Badge label={a.status} />
+                    {a.patientName}
                   </div>
-                  <div style={{ color: C.gray500, fontSize: 12, marginTop: 3 }}>
-                    {a.fullDate}, {a.time} · {a.type}
-                  </div>
+                  <Badge label={a.status} />
                 </div>
-              ))}
-            </div>
-          )}
+                <div style={{ color: C.gray500, fontSize: 12, marginTop: 3 }}>
+                  {a.fullDate}, {a.time} · {a.type}
+                </div>
+              </div>
+            ))}
+          </div>
         </Reveal>
       </div>
     </AppLayout>

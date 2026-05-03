@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { C } from "../constants.js";
 import { AppLayout, Badge, Reveal } from "../components.jsx";
 import { getAllAppointments, sendReminder, getAllPatients, createAppointment } from "../api.js";
-import { toast, customAlert } from "../dialogs.js";
 
 /**
  * AppointmentsPage
@@ -10,7 +9,7 @@ import { toast, customAlert } from "../dialogs.js";
  *   setPage: (page: string) => void
  */
 export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout, user }) {
-  const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
+  const isClinician = user?.role === 'CLINICIAN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +24,6 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
     duration: "30min",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -58,7 +56,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.patientId || !formData.date || !formData.time) return customAlert("Please fill all fields");
+    if (!formData.patientId || !formData.date || !formData.time) return alert("Please fill all fields");
     setSubmitting(true);
     const { error } = await createAppointment(formData);
     setSubmitting(false);
@@ -67,21 +65,12 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
       setFormData({ patientId: "", date: "", time: "", type: "adjustment", duration: "30min" });
       fetchData();
     } else {
-      customAlert("Failed to create appointment: " + error);
+      alert("Failed to create appointment: " + error);
     }
   };
 
-  const filteredAppointments = appointments.filter((a) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const nameMatch = a.patientName?.toLowerCase().includes(q);
-    const idMatch = a.patientId?.toLowerCase().includes(q) || a.patient?.patientId?.toLowerCase().includes(q) || a.patient?.id?.toLowerCase().includes(q);
-    const phoneMatch = a.patient?.phone?.toLowerCase().includes(q);
-    return nameMatch || idMatch || phoneMatch;
-  });
-
-  const upcoming = filteredAppointments.filter((a) => a.upcoming);
-  const past = filteredAppointments.filter((a) => !a.upcoming);
+  const upcoming = appointments.filter((a) => a.upcoming);
+  const past = appointments.filter((a) => !a.upcoming);
 
   const handleStatusChange = (id, newStatus) => {
     setAppointments((prev) =>
@@ -90,12 +79,12 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
   };
 
   const handleRemind = async (id) => {
-    toast("Sending reminder...", "info");
+    alert("Sending reminder...");
     const { error } = await sendReminder(id);
     if (!error) {
-      toast("Reminder sent successfully!", "success");
+      alert("Reminder sent successfully!");
     } else {
-      customAlert("Failed to send reminder");
+      alert("Failed to send reminder");
     }
   };
 
@@ -251,37 +240,6 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
               Appointment
             </button>
           )}
-        </Reveal>
-
-        {/* ── Search Bar ── */}
-        <Reveal style={{ marginBottom: 24 }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            background: "#fff",
-            border: `1px solid ${C.gray200}`,
-            borderRadius: 10,
-            padding: "10px 16px",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={C.gray400}>
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search appointments by patient name, ID, or phone number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                flex: 1,
-                border: "none",
-                background: "transparent",
-                outline: "none",
-                fontSize: 14,
-                color: C.gray900,
-              }}
-            />
-          </div>
         </Reveal>
 
         {/* ── Upcoming ── */}

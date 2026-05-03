@@ -156,22 +156,8 @@ const NAV = [
 ];
 
 
-export function Sidebar({ active, setPage, user }) {
+export function Sidebar({ active, setPage }) {
   const [collapsed, setCollapsed] = useState(false);
-
-  let navItems = [...NAV];
-  if (user?.role === "ADMIN") {
-    navItems = [
-      {
-        id: "users",
-        label: "Users",
-        d: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-      },
-      ...NAV.filter(n => n.id === "settings")
-    ];
-  } else if (user?.role === "STUDENT") {
-    navItems = NAV.filter(n => n.id !== "appointments" && n.id !== "reports");
-  }
 
   return (
     <div
@@ -232,7 +218,7 @@ export function Sidebar({ active, setPage, user }) {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "12px 8px" }}>
-        {navItems.map((item) => {
+        {NAV.map((item) => {
           const isActive = active === item.id;
           return (
             <button
@@ -311,7 +297,7 @@ export function Sidebar({ active, setPage, user }) {
 
 
 // ─── TopBar ───────────────────────────────────────────────────────────────────
-export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, active }) {
+export function TopBar({ user = null, setPage, setSelectedPatient, onLogout }) {
   const displayName = user?.name || "User";
   const initials = user?.initials || displayName[0]?.toUpperCase() || "U";
   const picture = user?.picture || "";
@@ -321,7 +307,18 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
 
   const [notifications, setNotifications] = useState([]);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [patients, setPatients] = useState([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchRef = useRef(null);
 
+  useEffect(() => {
+    getAllPatients().then(res => {
+      if (!res.error && Array.isArray(res.data)) {
+        setPatients(res.data);
+      }
+    });
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const notifRef = useRef(null);
@@ -336,6 +333,9 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setShowProfile(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchFocused(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -344,6 +344,11 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
+
+  const filteredPatients = patients.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 5); // Max 5 results
 
   return (
     <div
@@ -358,8 +363,80 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
         flexShrink: 0,
       }}
     >
-      {/* Removed Search */}
-      <div style={{ flex: 1 }} />
+      {/* Search */}
+      <div
+        ref={searchRef}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          background: isSearchFocused ? "#fff" : C.gray50,
+          border: `1px solid ${isSearchFocused ? C.blue : C.gray200}`,
+          boxShadow: isSearchFocused ? `0 0 0 3px rgba(33,150,243,0.15)` : "none",
+          borderRadius: 10,
+          padding: "8px 14px",
+          transition: "all 0.2s",
+          position: "relative",
+          maxWidth: 800
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill={isSearchFocused ? C.blue : C.gray400}>
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search patients by name or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
+          style={{
+            flex: 1,
+            border: "none",
+            background: "transparent",
+            outline: "none",
+            fontSize: 13,
+            color: C.gray900,
+          }}
+        />
+        {/* Search Results Dropdown */}
+        {isSearchFocused && searchQuery.length > 0 && (
+          <div style={{
+            position: "absolute", top: "100%", left: 0, right: 0, marginTop: 8,
+            background: "#fff", border: `1px solid ${C.gray200}`, borderRadius: 10,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.1)", overflow: "hidden", zIndex: 100
+          }}>
+            {filteredPatients.length > 0 ? (
+              filteredPatients.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => {
+                    if (setSelectedPatient && setPage) {
+                      setSelectedPatient(p);
+                      setPage('patient-detail');
+                    }
+                    setIsSearchFocused(false);
+                    setSearchQuery("");
+                  }}
+                  style={{
+                    padding: "10px 14px", borderBottom: `1px solid ${C.gray100}`,
+                    cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = C.gray50}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#fff"}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13, color: C.gray900 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: C.gray500 }}>{p.id}</div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: "14px", textAlign: "center", fontSize: 13, color: C.gray500 }}>
+                No patients found.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Bell Notification */}
       <div style={{ position: "relative", marginLeft: "auto" }} ref={notifRef}>
@@ -535,119 +612,6 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
   );
 }
 
-// ─── Global Overlay (Toasts & Dialogs) ─────────────────────────────────────────
-export function GlobalOverlay() {
-  const [toast, setToast] = useState(null);
-  const [confirmState, setConfirmState] = useState(null);
-  const [promptState, setPromptState] = useState(null);
-  const [promptVal, setPromptVal] = useState("");
-
-  useEffect(() => {
-    const handleToast = (e) => {
-      setToast(e.detail);
-      setTimeout(() => setToast(null), 3000);
-    };
-    const handleConfirm = (e) => setConfirmState(e.detail);
-    const handlePrompt = (e) => {
-      setPromptState(e.detail);
-      setPromptVal(e.detail.defaultValue || "");
-    };
-
-    window.addEventListener("toast", handleToast);
-    window.addEventListener("confirmDialog", handleConfirm);
-    window.addEventListener("promptDialog", handlePrompt);
-
-    return () => {
-      window.removeEventListener("toast", handleToast);
-      window.removeEventListener("confirmDialog", handleConfirm);
-      window.removeEventListener("promptDialog", handlePrompt);
-    };
-  }, []);
-
-  return (
-    <>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: "fixed", top: 24, right: 24, zIndex: 99999,
-          padding: "12px 20px", borderRadius: 12,
-          background: toast.type === "error" ? C.red : toast.type === "info" ? C.blue : C.green,
-          color: "#fff", fontSize: 14, fontWeight: 600,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-          display: "flex", alignItems: "center", gap: 8,
-          animation: "slideIn 0.3s ease"
-        }}>
-          {toast.type === "error" ? "✕" : toast.type === "info" ? "ℹ" : "✓"} {toast.message}
-        </div>
-      )}
-
-      {/* Confirm Dialog */}
-      {confirmState && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99998,
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center"
-        }}>
-          <div style={{
-            background: "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease"
-          }}>
-            <h3 style={{ margin: "0 0 8px", fontSize: 18, color: C.gray900 }}>{confirmState.title}</h3>
-            {confirmState.message && <p style={{ margin: "0 0 24px", color: C.gray500, fontSize: 14, lineHeight: 1.5 }}>{confirmState.message}</p>}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <button onClick={() => { confirmState.onCancel(); setConfirmState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: "#fff", color: C.gray700, fontWeight: 600, cursor: "pointer"
-              }}>Cancel</button>
-              <button onClick={() => { confirmState.onConfirm(); setConfirmState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: "none", background: C.blue, color: "#fff", fontWeight: 600, cursor: "pointer"
-              }}>Confirm</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Prompt Dialog */}
-      {promptState && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99998,
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center"
-        }}>
-          <div style={{
-            background: "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease"
-          }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: 18, color: C.gray900 }}>{promptState.title}</h3>
-            <input
-              autoFocus
-              value={promptVal}
-              onChange={e => setPromptVal(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { promptState.onSubmit(promptVal); setPromptState(null); } }}
-              style={{
-                width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${C.blue}40`,
-                fontSize: 14, fontFamily: "inherit", color: C.gray900, outline: "none", boxSizing: "border-box",
-                background: `${C.blue}06`, marginBottom: 24
-              }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <button onClick={() => { promptState.onCancel(); setPromptState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: "#fff", color: C.gray700, fontWeight: 600, cursor: "pointer"
-              }}>Cancel</button>
-              <button onClick={() => { promptState.onSubmit(promptVal); setPromptState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: "none", background: C.blue, color: "#fff", fontWeight: 600, cursor: "pointer"
-              }}>Submit</button>
-            </div>
-          </div>
-        </div>
-      )}
-      <style>{`
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      `}</style>
-    </>
-  );
-}
-
 // ─── Layout wrapper ─────────────────────────────────────────────────────
 export function AppLayout({ active, setPage, setSelectedPatient, onLogout, user, children }) {
   return (
@@ -659,8 +623,7 @@ export function AppLayout({ active, setPage, setSelectedPatient, onLogout, user,
         overflow: "hidden",
       }}
     >
-      <GlobalOverlay />
-      <Sidebar active={active} setPage={setPage} user={user} />
+      <Sidebar active={active} setPage={setPage} />
       <div
         style={{
           flex: 1,
@@ -670,7 +633,7 @@ export function AppLayout({ active, setPage, setSelectedPatient, onLogout, user,
           background: C.gray50,
         }}
       >
-        <TopBar user={user} setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} active={active} />
+        <TopBar user={user} setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} />
         <div style={{ flex: 1, overflowY: "auto" }} className="page-transition">{children}</div>
       </div>
     </div>
