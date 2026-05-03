@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { C } from "../constants.js";
-import { loginUser, registerUser } from "../api.js";
+import { loginUser, signupStudent } from "../api.js";
 
 /**
  * LoginPage
@@ -12,6 +12,10 @@ import { loginUser, registerUser } from "../api.js";
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [regNumber, setRegNumber] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -25,6 +29,11 @@ export default function LoginPage({ onLogin }) {
     const e = {};
     if (!username.trim()) e.username = "Username is required";
     if (!password) e.password = "Password is required";
+    if (isSignup) {
+      if (!fullName.trim()) e.fullName = "Full Name is required";
+      if (!email.trim()) e.email = "Email is required";
+      if (!regNumber.trim()) e.regNumber = "Registration Number is required";
+    }
     return e;
   };
 
@@ -33,7 +42,13 @@ export default function LoginPage({ onLogin }) {
     if (Object.keys(e).length) { setErrors(e); return; }
     setLoading(true);
     try {
-      const authResponse = await loginUser({ username, password });
+      let authResponse;
+      if (isSignup) {
+        authResponse = await signupStudent({ fullName, username, email, password, regNumber });
+      } else {
+        authResponse = await loginUser({ username, password });
+      }
+      
       const { data, error } = authResponse;
 
       if (error) {
@@ -115,13 +130,50 @@ export default function LoginPage({ onLogin }) {
 
         <>
           <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 700, margin: "0 0 6px", letterSpacing: "-0.4px" }}>
-            Welcome back
+            {isSignup ? "Create Student Account" : "Welcome back"}
           </h2>
           <p style={{ color: C.gray400, fontSize: 13, margin: "0 0 24px", lineHeight: 1.5 }}>
-            Sign in to manage your patients and appointments.
+            {isSignup ? "Register to access the clinical management system." : "Sign in to manage your patients and appointments."}
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {isSignup && (
+              <>
+                <div>
+                  <label style={labelStyle}>Full Name</label>
+                  <input type="text" value={fullName}
+                    onChange={(e) => { setFullName(e.target.value); clearError("fullName"); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    placeholder="Enter your full name" style={fieldStyle("fullName")}
+                    onFocus={(e) => !errors.fullName && (e.target.style.borderColor = C.blue)}
+                    onBlur={(e) => !errors.fullName && (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
+                  />
+                  {errors.fullName && <ErrMsg>{errors.fullName}</ErrMsg>}
+                </div>
+                <div>
+                  <label style={labelStyle}>Email Address</label>
+                  <input type="email" value={email}
+                    onChange={(e) => { setEmail(e.target.value); clearError("email"); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    placeholder="student@example.com" style={fieldStyle("email")}
+                    onFocus={(e) => !errors.email && (e.target.style.borderColor = C.blue)}
+                    onBlur={(e) => !errors.email && (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
+                  />
+                  {errors.email && <ErrMsg>{errors.email}</ErrMsg>}
+                </div>
+                <div>
+                  <label style={labelStyle}>Registration Number</label>
+                  <input type="text" value={regNumber}
+                    onChange={(e) => { setRegNumber(e.target.value); clearError("regNumber"); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    placeholder="e.g. STU-2026-001" style={fieldStyle("regNumber")}
+                    onFocus={(e) => !errors.regNumber && (e.target.style.borderColor = C.blue)}
+                    onBlur={(e) => !errors.regNumber && (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
+                  />
+                  {errors.regNumber && <ErrMsg>{errors.regNumber}</ErrMsg>}
+                </div>
+              </>
+            )}
             <div>
               <label style={labelStyle}>Username</label>
               <input type="text" value={username}
@@ -160,8 +212,29 @@ export default function LoginPage({ onLogin }) {
               boxShadow: loading ? "none" : "0 4px 20px rgba(33,150,243,0.35)",
             }}>
               {loading && <Spinner color="rgba(255,255,255,0.5)" />}
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? (isSignup ? "Creating account…" : "Signing in…") : (isSignup ? "Sign Up" : "Sign In")}
             </button>
+            
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <span style={{ color: C.gray400, fontSize: 13 }}>
+                {isSignup ? "Already have an account?" : "Don't have an account?"}
+              </span>
+              {" "}
+              <button
+                onClick={() => {
+                  setIsSignup(!isSignup);
+                  setErrors({});
+                  // Clear fields when switching
+                  setPassword("");
+                }}
+                style={{
+                  background: "none", border: "none", color: C.blueLight,
+                  fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0
+                }}
+              >
+                {isSignup ? "Sign In" : "Sign up as Student"}
+              </button>
+            </div>
           </div>
         </>
       </div>

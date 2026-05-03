@@ -12,6 +12,9 @@ model User {
   username      String          @unique
   password      String
   role          String          @default("STAFF")
+  fullName      String?
+  email         String?
+  regNumber     String?
   createdAt     DateTime        @default(now())
   patientAccess PatientAccess[]
 }
