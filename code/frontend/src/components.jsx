@@ -156,8 +156,22 @@ const NAV = [
 ];
 
 
-export function Sidebar({ active, setPage }) {
+export function Sidebar({ active, setPage, user }) {
   const [collapsed, setCollapsed] = useState(false);
+
+  let navItems = [...NAV];
+  if (user?.role === "ADMIN") {
+    navItems = [
+      {
+        id: "users",
+        label: "Users",
+        d: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+      },
+      ...NAV.filter(n => n.id === "settings")
+    ];
+  } else if (user?.role === "STUDENT") {
+    navItems = NAV.filter(n => n.id !== "appointments" && n.id !== "reports");
+  }
 
   return (
     <div
@@ -218,7 +232,7 @@ export function Sidebar({ active, setPage }) {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "12px 8px" }}>
-        {NAV.map((item) => {
+        {navItems.map((item) => {
           const isActive = active === item.id;
           return (
             <button
@@ -313,12 +327,14 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout }) {
   const searchRef = useRef(null);
 
   useEffect(() => {
-    getAllPatients().then(res => {
-      if (!res.error && Array.isArray(res.data)) {
-        setPatients(res.data);
-      }
-    });
-  }, []);
+    if (user?.role !== "ADMIN") {
+      getAllPatients().then(res => {
+        if (!res.error && Array.isArray(res.data)) {
+          setPatients(res.data);
+        }
+      });
+    }
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const notifRef = useRef(null);
@@ -381,12 +397,15 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout }) {
           maxWidth: 800
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill={isSearchFocused ? C.blue : C.gray400}>
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-        </svg>
+        {user?.role !== "ADMIN" && (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={isSearchFocused ? C.blue : C.gray400}>
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        )}
         <input
           type="text"
-          placeholder="Search patients by name or ID..."
+          placeholder={user?.role === "ADMIN" ? "Admin Console" : "Search patients by name or ID..."}
+          disabled={user?.role === "ADMIN"}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsSearchFocused(true)}
@@ -623,7 +642,7 @@ export function AppLayout({ active, setPage, setSelectedPatient, onLogout, user,
         overflow: "hidden",
       }}
     >
-      <Sidebar active={active} setPage={setPage} />
+      <Sidebar active={active} setPage={setPage} user={user} />
       <div
         style={{
           flex: 1,
