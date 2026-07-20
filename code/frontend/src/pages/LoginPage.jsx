@@ -54,11 +54,13 @@ export default function LoginPage({ onLogin }) {
       if (error) {
         setErrors({ password: error });
       } else {
+        const profileName = data?.user?.fullName || data?.user?.username || data?.username || username;
         onLogin({
-          name: data?.user?.username || data?.username || username,
-          email: "",
+          id: data?.user?.id,
+          name: profileName,
+          email: data?.user?.email || email || "",
           picture: "",
-          initials: (data?.user?.username || data?.username || username).substring(0, 2).toUpperCase(),
+          initials: profileName.substring(0, 2).toUpperCase(),
           provider: "password",
           token: data?.token || null,
           role: data?.user?.role || "STUDENT",
@@ -241,7 +243,7 @@ export default function LoginPage({ onLogin }) {
 
       {showPolicyModal && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, padding: 20 }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 400, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: C.surface, borderRadius: 16, padding: 24, width: "100%", maxWidth: 400, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
             <h3 style={{ margin: "0 0 12px", color: C.gray900, fontSize: 18 }}>
               {showPolicyModal === "terms" ? "Terms of Service" : "Privacy Policy"}
             </h3>

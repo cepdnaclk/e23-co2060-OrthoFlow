@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C } from "../constants.js";
+import { C, applyStoredTheme, setStoredTheme } from "../constants.js";
 import { clearToken, getMyProfile, updateMyProfile } from "../api.js";
 import { AppLayout, Reveal } from "../components.jsx";
 
@@ -10,6 +10,7 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [form, setForm] = useState({ fullName: "", email: "", regNumber: "", password: "" });
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || applyStoredTheme());
 
   useEffect(() => {
     (async () => {
@@ -21,6 +22,19 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
       }
       setLoading(false);
     })();
+  }, []);
+
+  useEffect(() => {
+    const syncTheme = (event) => {
+      setTheme(event.detail?.theme || document.documentElement.dataset.theme || applyStoredTheme());
+    };
+
+    syncTheme({ detail: { theme: document.documentElement.dataset.theme || applyStoredTheme() } });
+    window.addEventListener("themeChanged", syncTheme);
+
+    return () => {
+      window.removeEventListener("themeChanged", syncTheme);
+    };
   }, []);
 
   const showToast = (msg, type = "success") => {
@@ -58,6 +72,11 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
   const handleCancel = () => {
     setForm({ fullName: profile?.fullName || "", email: profile?.email || "", regNumber: profile?.regNumber || "", password: "" });
     setEditing(false);
+  };
+
+  const handleThemeChange = (nextTheme) => {
+    setStoredTheme(nextTheme);
+    setTheme(nextTheme);
   };
 
   const getRoleBadge = (role) => {
@@ -110,14 +129,14 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
         ) : (
           <>
             {/* Profile Header */}
-            <Reveal style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.gray200}`, overflow: "hidden", marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            <Reveal style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, overflow: "hidden", marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div style={{ height: 100, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 50%, #1e3a5f 100%)`, position: "relative" }}>
                 <div style={{ position: "absolute", top: 20, right: 20, padding: "5px 14px", borderRadius: 20, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", color: "#fff", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                   <span>{roleBadge.icon}</span> {roleBadge.label}
                 </div>
               </div>
               <div style={{ padding: "0 24px 24px", position: "relative" }}>
-                <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}, ${C.teal})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, fontWeight: 700, border: "4px solid #fff", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", marginTop: -36, position: "relative", zIndex: 1 }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}, ${C.teal})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, fontWeight: 700, border: `4px solid ${C.surface}`, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", marginTop: -36, position: "relative", zIndex: 1 }}>
                   {initials}
                 </div>
                 <div style={{ marginTop: 12 }}>
@@ -128,7 +147,7 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
             </Reveal>
 
             {/* Account Details (View / Edit) */}
-            <Reveal style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            <Reveal style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <SectionTitle icon="👤">Account Details</SectionTitle>
                 {!editing ? (
@@ -146,7 +165,7 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
                 ) : (
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={handleCancel} style={{
-                      background: "#fff", border: `1px solid ${C.gray200}`, borderRadius: 8,
+                      background: C.surface, border: `1px solid ${C.gray200}`, borderRadius: 8,
                       padding: "7px 16px", fontSize: 13, fontWeight: 600, color: C.gray700, cursor: "pointer",
                     }}>Cancel</button>
                     <button onClick={handleSave} disabled={saving} style={{
@@ -199,9 +218,15 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
               </div>
             </Reveal>
 
+            {/* Appearance */}
+            <Reveal style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <SectionTitle icon="◐">Appearance</SectionTitle>
+              <ThemeModePicker theme={theme} onChange={handleThemeChange} />
+            </Reveal>
+
             {/* Notifications */}
             {(profile?.role || user?.role) === "STAFF" && (
-              <div style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                 <SectionTitle icon="🔔">Notifications</SectionTitle>
                 {[["Email reminders for appointments", true], ["SMS reminders for appointments", false], ["Weekly summary report", true]].map(([label, val]) => (
                   <ToggleRow key={label} label={label} defaultChecked={val} />
@@ -210,7 +235,7 @@ export default function SettingsPage({ setPage, setSelectedPatient, onLogout, us
             )}
 
             {/* Sign Out */}
-            <div style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <SectionTitle icon="🔐">Account</SectionTitle>
               <p style={{ color: C.gray500, fontSize: 13, marginBottom: 16 }}>Signing out will end your current session.</p>
               <button onClick={() => { clearToken(); onLogout(); }} style={{
@@ -279,13 +304,69 @@ function EditRow({ label, value, onChange, placeholder, type = "text", inputStyl
   );
 }
 
-function ToggleRow({ label, defaultChecked }) {
-  const [checked, setChecked] = useState(defaultChecked);
+function ThemeModePicker({ theme, onChange }) {
+  const options = [
+    { value: "light", label: "Light", description: "Bright clinic interface" },
+    { value: "dark", label: "Dark", description: "Low-light interface" },
+  ];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+        {options.map((option) => {
+          const selected = theme === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              style={{
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: `1px solid ${selected ? C.blue : C.gray200}`,
+                background: selected ? `${C.blue}18` : C.gray50,
+                color: selected ? C.blue : C.gray700,
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.2s",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{option.label}</span>
+                {selected && (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: selected ? C.blue : C.gray500, marginTop: 4 }}>
+                {option.description}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ToggleRow({ label, hint, defaultChecked, checkedValue, onChange }) {
+  const [internalChecked, setInternalChecked] = useState(defaultChecked);
+  const checked = checkedValue ?? internalChecked;
+  const handleToggle = () => {
+    const next = !checked;
+    if (onChange) onChange(next);
+    else setInternalChecked(next);
+  };
+
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.gray100}` }}>
-      <span style={{ fontSize: 13, color: C.gray700 }}>{label}</span>
-      <button onClick={() => setChecked(v => !v)} style={{ width: 40, height: 22, borderRadius: 11, border: "none", background: checked ? C.blue : C.gray200, cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
-        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: checked ? 21 : 3, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+      <div>
+        <div style={{ fontSize: 13, color: C.gray700 }}>{label}</div>
+        {hint && <div style={{ fontSize: 11, color: C.gray500, marginTop: 3 }}>{hint}</div>}
+      </div>
+      <button onClick={handleToggle} style={{ width: 40, height: 22, borderRadius: 11, border: "none", background: checked ? C.blue : C.gray200, cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+        <div style={{ width: 16, height: 16, borderRadius: "50%", background: C.surface, position: "absolute", top: 3, left: checked ? 21 : 3, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
       </button>
     </div>
   );

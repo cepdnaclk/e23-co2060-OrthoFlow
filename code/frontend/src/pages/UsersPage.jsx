@@ -10,6 +10,7 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
   const [error, setError] = useState(null);
 
   const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("STAFF");
   const [creating, setCreating] = useState(false);
@@ -32,13 +33,14 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
   const handleCreateUser = async () => {
     if (!newUsername.trim() || !newPassword.trim()) return customAlert("Username and Password are required");
     setCreating(true);
-    const res = await createUser({ username: newUsername, password: newPassword, role: newRole });
+    const res = await createUser({ username: newUsername, email: newEmail, password: newPassword, role: newRole });
     setCreating(false);
 
     if (res.error) {
       customAlert("Error: " + res.error);
     } else {
       setNewUsername("");
+      setNewEmail("");
       setNewPassword("");
       setNewRole("STAFF");
       toast("User created successfully", "success");
@@ -80,7 +82,7 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
         </div>
 
         {/* Create User Form */}
-        <div style={{ background: "#fff", padding: 24, borderRadius: 16, border: `1px solid ${C.gray200}`, marginBottom: 32, display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+        <div style={{ background: C.surface, padding: 24, borderRadius: 16, border: `1px solid ${C.gray200}`, marginBottom: 32, display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: C.gray700, marginBottom: 6 }}>Username</label>
             <input
@@ -89,6 +91,16 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
               onChange={e => setNewUsername(e.target.value)}
               style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.gray200}`, fontSize: 14 }}
               placeholder="New username"
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: C.gray700, marginBottom: 6 }}>Email</label>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.gray200}`, fontSize: 14 }}
+              placeholder="clinician@example.com"
             />
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
@@ -123,7 +135,7 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
         </div>
 
         {/* Users Table */}
-        <div style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.gray200}`, overflow: "hidden" }}>
+        <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.gray200}`, overflow: "hidden" }}>
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: C.gray500 }}>Loading users...</div>
           ) : error ? (
@@ -134,6 +146,7 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
                 <tr style={{ background: C.gray50, borderBottom: `1px solid ${C.gray200}` }}>
                   <th style={{ padding: "16px 24px", textAlign: "left", fontSize: 13, fontWeight: 600, color: C.gray500 }}>ID</th>
                   <th style={{ padding: "16px 24px", textAlign: "left", fontSize: 13, fontWeight: 600, color: C.gray500 }}>Username</th>
+                  <th style={{ padding: "16px 24px", textAlign: "left", fontSize: 13, fontWeight: 600, color: C.gray500 }}>Email</th>
                   <th style={{ padding: "16px 24px", textAlign: "left", fontSize: 13, fontWeight: 600, color: C.gray500 }}>Role</th>
                   <th style={{ padding: "16px 24px", textAlign: "left", fontSize: 13, fontWeight: 600, color: C.gray500 }}>Actions</th>
                 </tr>
@@ -143,6 +156,7 @@ export default function UsersPage({ setPage, setSelectedPatient, onLogout, user 
                   <tr key={u.id} style={{ borderBottom: `1px solid ${C.gray100}` }}>
                     <td style={{ padding: "16px 24px", fontSize: 14, color: C.gray900 }}>{u.id}</td>
                     <td style={{ padding: "16px 24px", fontSize: 14, color: C.gray900, fontWeight: 500 }}>{u.username}</td>
+                    <td style={{ padding: "16px 24px", fontSize: 14, color: u.email ? C.gray700 : C.gray400 }}>{u.email || "Not set"}</td>
                     <td style={{ padding: "16px 24px" }}>
                       <span style={{
                         background: u.role === "ADMIN" ? "rgba(244, 67, 54, 0.1)" : u.role === "STAFF" ? "rgba(33, 150, 243, 0.1)" : "rgba(76, 175, 80, 0.1)",

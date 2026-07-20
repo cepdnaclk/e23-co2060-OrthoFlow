@@ -265,7 +265,7 @@ export default function ReportsPage({ setPage, setSelectedPatient, onLogout, use
               {logs.map((log) => (
                 <div key={log.id} style={{ display: "flex", padding: "16px 0", borderBottom: `1px solid ${C.gray100}` }}>
                   <div style={{ position: "relative", marginRight: 20 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: C.blue, border: "2px solid #fff", boxShadow: `0 0 0 2px ${C.blue}40`, position: "relative", zIndex: 1, marginTop: 4 }} />
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: C.blue, border: `2px solid ${C.surface}`, boxShadow: `0 0 0 2px ${C.blue}40`, position: "relative", zIndex: 1, marginTop: 4 }} />
                     <div style={{ position: "absolute", top: 16, bottom: -16, left: 5, width: 2, background: C.gray200 }} />
                   </div>
                   
@@ -300,7 +300,7 @@ function Card({ title, children }) {
   return (
     <div
       style={{
-        background: "#fff",
+        background: C.surface,
         borderRadius: 14,
         border: `1px solid ${C.gray200}`,
         padding: 20,

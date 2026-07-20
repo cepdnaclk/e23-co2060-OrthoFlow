@@ -29,9 +29,18 @@ const authorizeRoles = (...allowedRoles) => {
   };
 };
 
-router.post("/register", async (req, res) => {
+router.post("/register", authenticateToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, email, fullName, regNumber } = req.body;
+    const allowedRoles = ["STAFF", "ADMIN", "STUDENT"];
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    if (role && !allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
     
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -43,11 +52,23 @@ router.post("/register", async (req, res) => {
       data: {
         username,
         password: hashedPassword,
-        role: role || "DOCTOR",
+        role: role || "STAFF",
+        email: email || null,
+        fullName: fullName || null,
+        regNumber: regNumber || null,
       },
     });
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+        fullName: user.fullName
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -84,7 +105,17 @@ router.post("/signup-student", async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    res.status(201).json({ token, user: { id: user.id, username: user.username, role: user.role, fullName: user.fullName } });
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email,
+        regNumber: user.regNumber
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -110,7 +141,17 @@ router.post("/login", async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email,
+        regNumber: user.regNumber
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

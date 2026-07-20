@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const path = require("path");
 const bcrypt = require("bcrypt");
 const prisma = require("./prismaClient");
+const { startReminderScheduler } = require("./services/appointmentReminderService");
+const { getEmailConfigStatus } = require("./services/emailService");
 
 dotenv.config();
 
@@ -12,6 +14,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+
+app.get("/health", (req, res) => {
+  const databaseUrl = process.env.DATABASE_URL || "";
+
+  res.json({
+    app: "OrthoRecords",
+    apiVersion: "appointment-reminders-v2",
+    dbProvider: databaseUrl.split(":")[0] || "unknown",
+    email: getEmailConfigStatus(),
+  });
+});
 
 // Seeding function
 async function seedDatabase() {
@@ -40,6 +53,7 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const radiographRoutes = require("./routes/radiographRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const accessRoutes = require("./routes/accessRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 app.use("/auth", authRoutes);
 app.use("/patient", patientRoutes);
@@ -47,10 +61,14 @@ app.use("/appointment", appointmentRoutes);
 app.use("/radiograph", radiographRoutes);
 app.use("/admin", adminRoutes);
 app.use("/access", accessRoutes);
+app.use("/notification", notificationRoutes);
 
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, async () => {
   await seedDatabase();
+  startReminderScheduler();
   console.log(`Server running on port ${PORT}`);
+  console.log(`Database provider: ${(process.env.DATABASE_URL || "").split(":")[0] || "unknown"}`);
+  console.log(`Email reminders ready: ${getEmailConfigStatus().ready ? "yes" : "no"}`);
 });
