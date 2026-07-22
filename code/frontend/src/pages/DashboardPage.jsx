@@ -133,7 +133,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
         {/* ── Backend status ── */}
         {backendOnline === false && (
           <Reveal>
-            <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#856404" }}>
+            <div style={{ background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.warningText }}>
               ⚠ Backend offline — showing local demo data. Start the server at <strong>http://localhost:8080</strong>.
             </div>
           </Reveal>
@@ -183,7 +183,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
           {/* Recent Patients */}
           <div
             style={{
-              background: "#fff",
+              background: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.gray200}`,
               padding: 20,
@@ -260,7 +260,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
           {user?.role !== "STUDENT" && (
             <div
               style={{
-                background: "#fff",
+                background: C.surface,
                 borderRadius: 14,
                 border: `1px solid ${C.gray200}`,
                 padding: 20,

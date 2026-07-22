@@ -79,7 +79,7 @@ export async function logoutUser() {
   return { data: { success: true }, error: null };
 }
 
-export async function registerUser({ username, email, password, role = "CLINICIAN" }) {
+export async function registerUser({ username, email, password, role = "STAFF" }) {
   return request("POST", "/auth/register", { username, email, password, role });
 }
 
@@ -104,6 +104,10 @@ export async function updateMyProfile(data) {
 
 export async function registerPatient(formData) {
   return request("POST", "/patient/register", formData);
+}
+
+export async function getNextPatientRegistrationNumber() {
+  return request("GET", "/patient/next-registration-number");
 }
 
 export async function getPatient(id) {
@@ -140,8 +144,24 @@ export async function getAppointment(id) {
   return request("GET", `/appointment/${id}`);
 }
 
+export async function updateAppointmentStatus(id, status) {
+  return request("PATCH", `/appointment/${id}/status`, { status });
+}
+
 export async function sendReminder(id) {
   return request("POST", `/appointment/${id}/remind`);
+}
+
+export async function getNotifications() {
+  return request("GET", "/notification");
+}
+
+export async function markNotificationRead(id) {
+  return request("PATCH", `/notification/${id}/read`);
+}
+
+export async function markAllNotificationsRead() {
+  return request("PATCH", "/notification/read-all");
 }
 
 // ── Radiographs ───────────────────────────────────────────────────────────────

@@ -1,21 +1,32 @@
 const express = require("express");
 const prisma = require("../prismaClient");
 const { authenticateToken, authorizeRoles } = require("./authRoutes");
+const { getNextPatientRegistrationNumber, parsePatientRegistrationNumber } = require("../utils/patientRegistration");
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
+router.get("/next-registration-number", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
+  try {
+    const registrationNumber = await getNextPatientRegistrationNumber(prisma);
+    res.json({ registrationNumber });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/register", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const data = req.body;
     
     const s = (val) => (val === "" ? null : val);
+    const patientId = await getNextPatientRegistrationNumber(prisma);
 
     const patient = await prisma.patient.create({
       data: {
         name: data.name || data.fullName,
-        patientId: data.patientId || data.regNum || `ORT-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        patientId,
         dob: data.dob ? new Date(data.dob) : null,
         gender: s(data.gender),
         phone: s(data.phone),
@@ -71,7 +82,7 @@ router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.get("/history/all", authorizeRoles("STAFF"), async (req, res) => {
+router.get("/history/all", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const logs = await prisma.historyLog.findMany({
       orderBy: { timestamp: 'desc' },
@@ -111,14 +122,20 @@ router.get("/:id", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.put("/:id", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const data = req.body;
     const s = (val) => (val === "" ? null : val);
     
     const updateData = {};
     if (data.name || data.fullName) updateData.name = data.name || data.fullName;
-    if (data.patientId || data.regNum) updateData.patientId = data.patientId || data.regNum;
+    if (data.patientId || data.regNum) {
+      const patientId = data.patientId || data.regNum;
+      if (!parsePatientRegistrationNumber(patientId)) {
+        return res.status(400).json({ message: "Registration number must use the format ORT-YYYY-0001" });
+      }
+      updateData.patientId = patientId;
+    }
     if (data.dob !== undefined) updateData.dob = data.dob ? new Date(data.dob) : null;
     if (data.gender !== undefined) updateData.gender = s(data.gender);
     if (data.phone !== undefined) updateData.phone = s(data.phone);
@@ -157,7 +174,7 @@ router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.delete("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.delete("/:id", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const id = req.params.id;
     

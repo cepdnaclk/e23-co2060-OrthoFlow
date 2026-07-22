@@ -1,8 +1,52 @@
 import { useState, useEffect } from "react";
 import { C } from "../constants.js";
 import { AppLayout, Badge, Reveal } from "../components.jsx";
-import { getAllAppointments, sendReminder, getAllPatients, createAppointment } from "../api.js";
+import { getAllAppointments, sendReminder, getAllPatients, createAppointment, updateAppointmentStatus } from "../api.js";
 import { toast, customAlert } from "../dialogs.js";
+
+function getAppointmentDateTime(appointment) {
+  const date = new Date(appointment.date);
+  const [hours = "0", minutes = "0"] = String(appointment.time || "00:00").split(":");
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    Number(hours),
+    Number(minutes),
+    0,
+    0
+  );
+}
+
+const CHANNEL_STATUS_STYLES = {
+  Pending: { bg: "rgba(245, 158, 11, 0.14)", color: "#b45309" },
+  Sent: { bg: "rgba(16, 185, 129, 0.14)", color: "#047857" },
+  Mock: { bg: "rgba(59, 130, 246, 0.14)", color: "#1d4ed8" },
+  Skipped: { bg: "rgba(148, 163, 184, 0.16)", color: "#64748b" },
+  Failed: { bg: "rgba(239, 68, 68, 0.14)", color: "#b91c1c" },
+  "Not required": { bg: "rgba(148, 163, 184, 0.16)", color: "#64748b" },
+};
+
+function ChannelBadge({ label, status }) {
+  const normalizedStatus = status || "Pending";
+  const style = CHANNEL_STATUS_STYLES[normalizedStatus] || CHANNEL_STATUS_STYLES.Pending;
+
+  return (
+    <span
+      style={{
+        background: style.bg,
+        color: style.color,
+        borderRadius: 20,
+        padding: "3px 9px",
+        fontSize: 11,
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}: {normalizedStatus}
+    </span>
+  );
+}
 
 /**
  * AppointmentsPage
@@ -35,14 +79,17 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
     ]);
     
     if (!apptRes.error && Array.isArray(apptRes.data)) {
-      setAppointments(apptRes.data.map(a => ({
-        ...a,
-        upcoming: a.upcoming ?? (new Date(a.date) >= new Date()),
-        status: a.status || "Scheduled",
-        patientName: a.patient?.name || a.patientName || "Unknown",
-        fullDate: a.date ? new Date(a.date).toDateString() : "",
-        day: a.date ? new Date(a.date).getDate() : ""
-      })));
+      setAppointments(apptRes.data.map(a => {
+        const appointmentAt = getAppointmentDateTime(a);
+        return {
+          ...a,
+          upcoming: a.upcoming ?? (appointmentAt >= new Date()),
+          status: a.status || "Scheduled",
+          patientName: a.patient?.name || a.patientName || "Unknown",
+          fullDate: a.date ? appointmentAt.toDateString() : "",
+          day: a.date ? appointmentAt.getDate() : ""
+        };
+      }));
     }
     
     if (!patRes.error && Array.isArray(patRes.data)) {
@@ -83,19 +130,59 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
   const upcoming = filteredAppointments.filter((a) => a.upcoming);
   const past = filteredAppointments.filter((a) => !a.upcoming);
 
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus) => {
+    const previous = appointments.find((a) => a.id === id);
     setAppointments((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
     );
+
+    const { data, error } = await updateAppointmentStatus(id, newStatus);
+    if (error) {
+      if (previous) {
+        setAppointments((prev) => prev.map((a) => (a.id === id ? previous : a)));
+      }
+      toast("Could not update appointment status: " + error, "error");
+      return;
+    }
+
+    if (data) {
+      setAppointments((prev) =>
+        prev.map((a) => {
+          if (a.id !== id) return a;
+          const appointmentAt = getAppointmentDateTime(data);
+          return {
+            ...a,
+            ...data,
+            upcoming: appointmentAt >= new Date(),
+            patientName: data.patient?.name || a.patientName || "Unknown",
+            fullDate: data.date ? appointmentAt.toDateString() : a.fullDate,
+            day: data.date ? appointmentAt.getDate() : a.day,
+          };
+        })
+      );
+      toast("Appointment status updated", "success");
+      window.dispatchEvent(new Event("notificationsRefresh"));
+    }
   };
 
   const handleRemind = async (id) => {
     toast("Sending reminder...", "info");
-    const { error } = await sendReminder(id);
+    const { data, error } = await sendReminder(id);
     if (!error) {
-      toast("Reminder sent successfully!", "success");
+      const result = data?.result || {};
+      const channelSummary = [
+        `Email ${result.patientEmailStatus || "Pending"}`,
+        `SMS ${result.patientSmsStatus || "Pending"}`,
+      ].join(", ");
+      const warnings = data?.result?.warnings || [];
+      toast(
+        `Reminder processed: ${channelSummary}`,
+        warnings.length ? "warning" : "success"
+      );
+      fetchData();
+      window.dispatchEvent(new Event("notificationsRefresh"));
     } else {
-      customAlert("Failed to send reminder");
+      toast(error, "error");
     }
   };
 
@@ -147,8 +234,13 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
         </div>
       </div>
 
-      {/* Status badge */}
-      <Badge label={appt.status} />
+      {/* Status badges */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <Badge label={appt.status} />
+        <ChannelBadge label="Email" status={appt.patientEmailStatus} />
+        <ChannelBadge label="SMS" status={appt.patientSmsStatus} />
+        <ChannelBadge label="Panel" status={appt.patientNotificationStatus} />
+      </div>
 
       {/* Remind button (upcoming only) */}
       {isClinician && appt.upcoming && (
@@ -173,16 +265,21 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
             width="13"
             height="13"
             viewBox="0 0 24 24"
-            fill="currentColor"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path d="M22 17.607c-.786 2.28-3.139 6.317-5.563 6.361-1.608.031-2.125-.953-3.963-.953-1.837 0-2.412.923-3.932.983-2.572.099-6.542-5.827-6.542-10.995 0-4.747 3.308-7.1 6.198-7.143 1.55-.028 3.014 1.045 3.959 1.045.949 0 2.727-1.29 4.596-1.101.782.033 2.979.315 4.389 2.377l-1.264.758c-.88-1.361-2.259-1.815-3.419-1.764C14.46 6.87 12.89 7.976 12.89 7.976c-1.041 0-2.631-.981-3.917-.952-2.174.046-4.244 1.773-4.244 5.21 0 4.476 3.146 9.424 5.007 9.424 1.149 0 1.538-.756 2.855-.799.942-.042 1.879.748 2.798.748 1.479 0 2.937-2.291 3.617-4z" />
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           Remind
         </button>
       )}
 
-      {/* Status changer (upcoming only) */}
-      {isClinician && appt.upcoming && (
+      {/* Status changer */}
+      {isClinician && (
         <select
           value={appt.status}
           onChange={(e) => handleStatusChange(appt.id, e.target.value)}
@@ -192,7 +289,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
             padding: "6px 10px",
             fontSize: 12,
             color: C.gray700,
-            background: "#fff",
+            background: C.surface,
             cursor: "pointer",
             flexShrink: 0,
           }}
@@ -200,6 +297,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
           <option>Scheduled</option>
           <option>Confirmed</option>
           <option>Cancelled</option>
+          <option>Completed</option>
         </select>
       )}
     </div>
@@ -231,6 +329,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
             </div>
           </div>
           {isClinician && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               onClick={() => setShowModal(true)}
               style={{
@@ -250,6 +349,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
               <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> New
               Appointment
             </button>
+            </div>
           )}
         </Reveal>
 
@@ -259,7 +359,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "#fff",
+            background: C.surface,
             border: `1px solid ${C.gray200}`,
             borderRadius: 10,
             padding: "10px 16px",
@@ -286,7 +386,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
 
         {/* ── Upcoming ── */}
         <Reveal style={{
-          background: "#fff",
+          background: C.surface,
           borderRadius: 14,
           border: `1px solid ${C.gray200}`,
           overflow: "hidden",
@@ -325,7 +425,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
 
         {/* ── Past ── */}
         <Reveal style={{
-          background: "#fff",
+          background: C.surface,
           borderRadius: 14,
           border: `1px solid ${C.gray200}`,
           overflow: "hidden",
@@ -362,7 +462,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
           alignItems: "center", justifyContent: "center", padding: 20
         }}>
           <div style={{
-            background: "#fff", borderRadius: 16, width: "100%", maxWidth: 500,
+            background: C.surface, borderRadius: 16, width: "100%", maxWidth: 500,
             boxShadow: "0 20px 40px rgba(0,0,0,0.2)", overflow: "hidden"
           }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.gray100}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -381,7 +481,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
                 >
                   <option value="">Select a patient...</option>
                   {patients.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                    <option key={p.id} value={p.id}>{p.name || p.fullName || "Unknown patient"}</option>
                   ))}
                 </select>
               </div>
@@ -442,7 +542,7 @@ export default function AppointmentsPage({ setPage, setSelectedPatient, onLogout
                 <button 
                   type="button" 
                   onClick={() => setShowModal(false)}
-                  style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: "#fff", color: C.gray700, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+                  style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: C.surface, color: C.gray700, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
                 >
                   Cancel
                 </button>

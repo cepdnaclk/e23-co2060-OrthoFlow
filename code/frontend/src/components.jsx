@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { C, STATUS_COLORS } from "./constants.js";
-import { getAllPatients } from "./api.js";
+import { C, STATUS_COLORS, applyStoredTheme, setStoredTheme } from "./constants.js";
+import { getNotifications, markAllNotificationsRead, markNotificationRead } from "./api.js";
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 export function Badge({ label }) {
@@ -76,7 +76,7 @@ export function StatCard({ label, value, iconColor, iconPath }) {
   return (
     <div
       style={{
-        background: "#fff",
+        background: C.surface,
         borderRadius: 14,
         padding: "20px 24px",
         border: `1px solid ${C.gray200}`,
@@ -318,14 +318,52 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || applyStoredTheme());
 
   const [notifications, setNotifications] = useState([]);
-
-
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+
+  const formatNotificationTime = (createdAt) => {
+    if (!createdAt) return "";
+    const created = new Date(createdAt);
+    const diffMs = Date.now() - created.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return "Just now";
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hr ago`;
+
+    return created.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const loadNotifications = async () => {
+    const { data, error } = await getNotifications();
+    if (!error && Array.isArray(data)) {
+      setNotifications(data.map((item) => ({
+        ...item,
+        text: item.message,
+        time: formatNotificationTime(item.createdAt),
+      })));
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    window.addEventListener("notificationsRefresh", loadNotifications);
+    const handleThemeChanged = (event) => setTheme(event.detail?.theme || applyStoredTheme());
+    window.addEventListener("themeChanged", handleThemeChanged);
+    const interval = setInterval(loadNotifications, 60000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("notificationsRefresh", loadNotifications);
+      window.removeEventListener("themeChanged", handleThemeChanged);
+    };
+  }, []);
 
   // Click outside to close
   useEffect(() => {
@@ -341,15 +379,30 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const markAllRead = () => {
+  const markAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    await markAllNotificationsRead();
+    loadNotifications();
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+      await markNotificationRead(notification.id);
+    }
+  };
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setStoredTheme(nextTheme);
+    setTheme(nextTheme);
   };
 
   return (
     <div
       style={{
         height: 56,
-        background: "#fff",
+        background: C.surface,
         borderBottom: `1px solid ${C.gray200}`,
         display: "flex",
         alignItems: "center",
@@ -360,6 +413,35 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
     >
       {/* Removed Search */}
       <div style={{ flex: 1 }} />
+
+      {/* Theme Switch */}
+      <button
+        onClick={toggleTheme}
+        title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 10,
+          border: `1px solid ${C.gray200}`,
+          background: C.surface,
+          color: C.gray700,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "all 0.2s",
+        }}
+      >
+        {theme === "dark" ? (
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zM1 13h3v-2H1v2zm10-12h2v3h-2V1zm8.66 5.26l1.79-1.8-1.41-1.41-1.8 1.79 1.42 1.42zM17.24 19.16l1.8 1.79 1.41-1.41-1.79-1.8-1.42 1.42zM20 11v2h3v-2h-3zM12 6a6 6 0 100 12 6 6 0 000-12zm-1 14h2v3h-2v-3zm-7.45-.46l1.41 1.41 1.8-1.79-1.42-1.42-1.79 1.8z" />
+          </svg>
+        ) : (
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        )}
+      </button>
 
       {/* Bell Notification */}
       <div style={{ position: "relative", marginLeft: "auto" }} ref={notifRef}>
@@ -380,7 +462,7 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
                 height: 14,
                 borderRadius: "50%",
                 background: C.red,
-                border: "2px solid #fff",
+                border: `2px solid ${C.surface}`,
                 fontSize: 8,
                 color: "#fff",
                 display: "flex",
@@ -401,7 +483,7 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
             top: 40,
             right: 0,
             width: 320,
-            background: "#fff",
+            background: C.surface,
             borderRadius: 12,
             boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
             border: `1px solid ${C.gray200}`,
@@ -416,16 +498,18 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
             </div>
             <div style={{ maxHeight: 300, overflowY: "auto" }}>
               {notifications.length > 0 ? notifications.map(n => (
-                <div key={n.id} style={{
+                <div key={n.id} onClick={() => handleNotificationClick(n)} style={{
                   padding: "12px 16px",
                   borderBottom: `1px solid ${C.gray100}`,
-                  background: n.read ? "#fff" : "rgba(33,150,243,0.04)",
+                  background: n.read ? C.surface : "rgba(33,150,243,0.08)",
                   display: "flex",
                   gap: 12,
-                  alignItems: "flex-start"
+                  alignItems: "flex-start",
+                  cursor: "pointer"
                 }}>
                   {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.blue, marginTop: 6, flexShrink: 0 }} />}
                   <div>
+                    <div style={{ fontSize: 12, color: C.gray500, fontWeight: 700, marginBottom: 3 }}>{n.title || "Notification"}</div>
                     <div style={{ fontSize: 13, color: C.gray800, fontWeight: n.read ? 400 : 600, marginBottom: 4 }}>{n.text}</div>
                     <div style={{ fontSize: 11, color: C.gray400 }}>{n.time}</div>
                   </div>
@@ -491,7 +575,7 @@ export function TopBar({ user = null, setPage, setSelectedPatient, onLogout, act
             top: 50,
             right: 0,
             width: 240,
-            background: "#fff",
+            background: C.surface,
             borderRadius: 12,
             boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
             border: `1px solid ${C.gray200}`,
@@ -541,6 +625,13 @@ export function GlobalOverlay() {
   const [confirmState, setConfirmState] = useState(null);
   const [promptState, setPromptState] = useState(null);
   const [promptVal, setPromptVal] = useState("");
+  const toastStyles = {
+    error: { color: C.red, label: "Error" },
+    warning: { color: C.orange, label: "Notice" },
+    info: { color: C.blue, label: "Info" },
+    success: { color: C.green, label: "Success" },
+  };
+  const currentToastStyle = toastStyles[toast?.type] || toastStyles.info;
 
   useEffect(() => {
     const handleToast = (e) => {
@@ -570,14 +661,29 @@ export function GlobalOverlay() {
       {toast && (
         <div style={{
           position: "fixed", top: 24, right: 24, zIndex: 99999,
-          padding: "12px 20px", borderRadius: 12,
-          background: toast.type === "error" ? C.red : toast.type === "info" ? C.blue : C.green,
-          color: "#fff", fontSize: 14, fontWeight: 600,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-          display: "flex", alignItems: "center", gap: 8,
+          width: "min(420px, calc(100vw - 32px))",
+          padding: "14px 16px",
+          borderRadius: 10,
+          background: C.surfaceElevated,
+          border: `1px solid ${C.gray200}`,
+          borderLeft: `4px solid ${currentToastStyle.color}`,
+          color: C.gray900,
+          boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
           animation: "slideIn 0.3s ease"
         }}>
-          {toast.type === "error" ? "✕" : toast.type === "info" ? "ℹ" : "✓"} {toast.message}
+          <div style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: currentToastStyle.color,
+            marginBottom: 4,
+            textTransform: "uppercase",
+            letterSpacing: 0,
+          }}>
+            {currentToastStyle.label}
+          </div>
+          <div style={{ color: C.gray700, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
+            {toast.message}
+          </div>
         </div>
       )}
 
@@ -589,14 +695,14 @@ export function GlobalOverlay() {
           display: "flex", alignItems: "center", justifyContent: "center"
         }}>
           <div style={{
-            background: "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
+            background: C.surface, padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
             boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease"
           }}>
             <h3 style={{ margin: "0 0 8px", fontSize: 18, color: C.gray900 }}>{confirmState.title}</h3>
             {confirmState.message && <p style={{ margin: "0 0 24px", color: C.gray500, fontSize: 14, lineHeight: 1.5 }}>{confirmState.message}</p>}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button onClick={() => { confirmState.onCancel(); setConfirmState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: "#fff", color: C.gray700, fontWeight: 600, cursor: "pointer"
+                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: C.surface, color: C.gray700, fontWeight: 600, cursor: "pointer"
               }}>Cancel</button>
               <button onClick={() => { confirmState.onConfirm(); setConfirmState(null); }} style={{
                 padding: "8px 16px", borderRadius: 8, border: "none", background: C.blue, color: "#fff", fontWeight: 600, cursor: "pointer"
@@ -614,7 +720,7 @@ export function GlobalOverlay() {
           display: "flex", alignItems: "center", justifyContent: "center"
         }}>
           <div style={{
-            background: "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
+            background: C.surface, padding: 24, borderRadius: 16, width: "100%", maxWidth: 400,
             boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease"
           }}>
             <h3 style={{ margin: "0 0 16px", fontSize: 18, color: C.gray900 }}>{promptState.title}</h3>
@@ -631,7 +737,7 @@ export function GlobalOverlay() {
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button onClick={() => { promptState.onCancel(); setPromptState(null); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: "#fff", color: C.gray700, fontWeight: 600, cursor: "pointer"
+                padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.gray200}`, background: C.surface, color: C.gray700, fontWeight: 600, cursor: "pointer"
               }}>Cancel</button>
               <button onClick={() => { promptState.onSubmit(promptVal); setPromptState(null); }} style={{
                 padding: "8px 16px", borderRadius: 8, border: "none", background: C.blue, color: "#fff", fontWeight: 600, cursor: "pointer"

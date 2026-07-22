@@ -1,0 +1,4 @@
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+Server running on port 8080
+Database provider: postgresql
+Email reminders ready: yes

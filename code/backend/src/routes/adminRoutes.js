@@ -11,7 +11,7 @@ router.use(authorizeRoles("ADMIN")); // Only ADMIN can access
 router.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, username: true, role: true, createdAt: true }
+      select: { id: true, username: true, email: true, role: true, createdAt: true }
     });
     res.json(users);
   } catch (error) {
@@ -21,15 +21,15 @@ router.get("/users", async (req, res) => {
 
 router.post("/users", async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, email } = req.body;
     const existing = await prisma.user.findUnique({ where: { username } });
     if (existing) return res.status(400).json({ message: "Username taken" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { username, password: hashedPassword, role }
+      data: { username, password: hashedPassword, role, email: email || null }
     });
-    res.status(201).json({ id: user.id, username: user.username, role: user.role });
+    res.status(201).json({ id: user.id, username: user.username, email: user.email, role: user.role });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

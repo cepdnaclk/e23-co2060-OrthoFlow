@@ -176,7 +176,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
       <div style={{ padding: 28 }}>
         {/* ── Backend warning ── */}
         {fetchError && (
-          <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#856404" }}>
+          <div style={{ background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.warningText }}>
             ⚠ {fetchError}
           </div>
         )}
@@ -209,7 +209,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             alignItems: "center",
             gap: 16,
             marginBottom: 24,
-            background: "#fff",
+            background: C.surface,
             border: `1px solid ${C.gray200}`,
             borderRadius: 14,
             padding: 20,
@@ -320,7 +320,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             <div
               key={section.title}
               style={{
-                background: "#fff",
+                background: C.surface,
                 borderRadius: 14,
                 border: `1px solid ${C.gray200}`,
                 padding: 20,
@@ -361,7 +361,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
 
           {/* ── Case History Images ── */}
           <div style={{
-            background: "#fff",
+            background: C.surface,
             borderRadius: 14,
             border: `1px solid ${C.gray200}`,
             padding: 20,
@@ -416,7 +416,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
 
           {/* ── Radiographs ── */}
           <div style={{
-            background: "#fff",
+            background: C.surface,
             borderRadius: 14,
             border: `1px solid ${C.gray200}`,
             padding: 20,
@@ -472,7 +472,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           {/* ── Access Management ── */}
           {isClinician && (
             <div style={{
-              background: "#fff",
+              background: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.gray200}`,
               padding: 20,
@@ -523,7 +523,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           {/* ── Patient History ── */}
           {isClinician && (
             <div style={{
-              background: "#fff",
+              background: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.gray200}`,
               padding: 20,
