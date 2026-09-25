@@ -9,3 +9,7 @@ docs/testing/evidence/runs/
 generated/
 code/backend/private/
 code/backend/public/uploads/
+
+.env.*
+!.env.example
+!.env.test.example

@@ -1,3 +1,4 @@
+import { BASE_URL } from "../api.js";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { C } from "../constants.js";
@@ -426,7 +427,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                 (patient.radiographs || []).filter(r => r.category === "CASE_HISTORY").map(r => (
                   <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
                     <SecureImage 
-                      src={`http://localhost:8080${r.fileUrl}`} 
+                      src={`${BASE_URL}${r.fileUrl}`}
                       alt={r.description} 
                       style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
                       onClick={() => setFullScreenImage(r)}
@@ -481,7 +482,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                 (patient.radiographs || []).filter(r => r.category !== "CASE_HISTORY").map(r => (
                   <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
                     <SecureImage 
-                      src={`http://localhost:8080${r.fileUrl}`} 
+                      src={`${BASE_URL}${r.fileUrl}`}
                       alt={r.description} 
                       style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
                       onClick={() => setFullScreenImage(r)}
@@ -619,7 +620,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
               </button>
             </div>
             <SecureImage 
-              src={`http://localhost:8080${fullScreenImage.fileUrl}`} 
+              src={`${BASE_URL}${fullScreenImage.fileUrl}`}
               alt={fullScreenImage.description} 
               style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} 
             />

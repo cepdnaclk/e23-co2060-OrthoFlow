@@ -134,7 +134,7 @@ export default function DashboardPage({ setPage, setSelectedPatient, onLogout, u
         {backendOnline === false && (
           <Reveal>
             <div style={{ background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.warningText }}>
-              ⚠ Backend offline — showing local demo data. Start the server at <strong>http://localhost:8080</strong>.
+              ⚠ Backend offline — showing local demo data. Please try again later or contact your administrator.
             </div>
           </Reveal>
         )}

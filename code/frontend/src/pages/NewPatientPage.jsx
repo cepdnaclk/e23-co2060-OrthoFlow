@@ -1,3 +1,4 @@
+import { BASE_URL } from "../api.js";
 import { useEffect, useState } from "react";
 import { useRef } from "react";
 import { C, PATIENT_STATUSES } from "../constants.js";
@@ -325,7 +326,7 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
                   (editPatient ? radiographs.filter(r => r.category === "CASE_HISTORY") : pendingImages.filter(r => r.category === "CASE_HISTORY")).map(r => (
                     <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
                       <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
-                      <SecureImage src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <SecureImage src={editPatient ? `${BASE_URL}${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
                       <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
                       {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>
@@ -355,7 +356,7 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
                   (editPatient ? radiographs.filter(r => r.category !== "CASE_HISTORY") : pendingImages.filter(r => r.category === "RADIOGRAPH")).map(r => (
                     <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
                       <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
-                      <SecureImage src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <SecureImage src={editPatient ? `${BASE_URL}${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
                       <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
                       {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>

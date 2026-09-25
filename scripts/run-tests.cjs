@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, '..');
 const mode = process.argv[2] || 'unit';
 const backend = path.join(root, 'code/backend');
 const frontend = path.join(root, 'code/frontend');
-const unit = ['src/services/appointmentReminderService.test.js', 'src/utils/caseHistory.test.js', 'src/scripts/testEnvironment.test.cjs'];
+const unit = ['src/config.test.js', 'src/services/appointmentReminderService.test.js', 'src/utils/caseHistory.test.js', 'src/scripts/testEnvironment.test.cjs'];
 const suites = {
   unit: [[backend, ['--test', ...unit]]],
   coverage: [[backend, ['--test', '--experimental-test-coverage', ...unit]]],

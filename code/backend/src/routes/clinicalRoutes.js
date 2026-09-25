@@ -8,7 +8,7 @@ const { authenticateToken, authorizeRoles } = require('./authRoutes');
 const { canReadPatient, actor, httpError } = require('../utils/patientAccess');
 const definitions = require('../../../shared/clinicalFields.json');
 const router = express.Router();
-const directory = path.join(__dirname, '../../private/consents');
+const { consents: directory } = require('../config').storagePaths();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 4 } });
 router.use(authenticateToken);
 router.use('/:patientId', async (req, res, next) => {

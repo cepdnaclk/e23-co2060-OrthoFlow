@@ -1,13 +1,13 @@
 /**
  * api.js — Central API layer
- * Backend base URL: http://localhost:8080
+ * Production uses the current origin; VITE_API_URL optionally overrides it.
  *
  * All functions return { data, error }
  * data  → parsed JSON on success
  * error → error message string on failure
  */
 
-const BASE_URL = "http://localhost:8080";
+export const BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080" : "")).replace(/\/+$/, "");
 
 let _token = localStorage.getItem("ortho_token") || null;
 

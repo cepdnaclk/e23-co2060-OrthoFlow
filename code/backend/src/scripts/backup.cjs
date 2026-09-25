@@ -4,7 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { createHash, randomUUID } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
-const backend = path.resolve(__dirname, '../..');
+const storage = require('../config').storagePaths();
 const url = new URL(process.env.DATABASE_URL);
 const database = decodeURIComponent(url.pathname.slice(1));
 const env = { ...process.env, PGPASSWORD: decodeURIComponent(url.password) };
@@ -44,8 +44,8 @@ try {
     const destination = path.join(root, new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 8));
     fs.mkdirSync(destination, { recursive: true });
     run('pg_dump', [...common, '-d', database, '-Fc', '-f', path.join(destination, 'database.dump')]);
-    for (const [source, name] of [['public/uploads', 'uploads'], ['private', 'private']]) {
-      const location = path.join(backend, source);
+    for (const [source, name] of [[storage.uploads, 'uploads'], [storage.private, 'private']]) {
+      const location = source;
       if (fs.existsSync(location)) fs.cpSync(location, path.join(destination, name), { recursive: true });
       else fs.mkdirSync(path.join(destination, name));
     }

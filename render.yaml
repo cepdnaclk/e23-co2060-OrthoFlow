@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: orthoflow
+    runtime: node
+    plan: 0.5c-512mb
+    region: singapore
+    branch: main
+    buildCommand: npm ci --include=dev --prefix code/backend && npm run db:generate --prefix code/backend && npm ci --include=dev --prefix code/frontend && npm run build --prefix code/frontend
+    preDeployCommand: npm run db:deploy --prefix code/backend
+    startCommand: npm start --prefix code/backend
+    healthCheckPath: /health
+    disk:
+      name: orthoflow-files
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: TZ
+        value: Asia/Colombo
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: orthoflow-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_DIR
+        value: /var/data
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: REMINDERS_ENABLED
+        value: 'true'
+
+databases:
+  - name: orthoflow-db
+    plan: 0.1c-256mb
+    region: singapore
+    postgresMajorVersion: '18'
+    databaseName: orthoflow
+    user: orthoflow
+    diskSizeGB: 1
+    ipAllowList: []

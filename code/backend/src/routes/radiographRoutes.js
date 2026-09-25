@@ -7,12 +7,13 @@ const prisma = require("../prismaClient");
 const { canReadPatient, actor } = require('../utils/patientAccess');
 const { authenticateToken, authorizeRoles } = require("./authRoutes");
 
+const { uploads: uploadDirectory } = require("../config").storagePaths();
 const router = express.Router();
 
 // Multer storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../../public/uploads"));
+    cb(null, uploadDirectory);
   },
   filename: (req, file, cb) => {
     cb(null, randomUUID() + ({ 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype] || '.bin'));
@@ -87,7 +88,7 @@ router.delete("/:id", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
     if (patient.archivedAt) return res.status(409).json({ message: 'Restore the patient before modifying media' });
     
     // Delete physical file
-    const filePath = path.join(__dirname, "../../public", radiograph.fileUrl);
+    const filePath = path.join(uploadDirectory, path.basename(radiograph.fileUrl));
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
