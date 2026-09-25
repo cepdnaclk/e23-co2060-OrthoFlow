@@ -1,0 +1,794 @@
+[
+  {
+    "title": "History and examination",
+    "fields": [
+      {
+        "key": "province",
+        "label": "Province",
+        "type": "single",
+        "options": [
+          "Central",
+          "Eastern",
+          "North Central",
+          "Northern",
+          "North Western",
+          "Sabaragamuwa",
+          "Southern",
+          "Uva",
+          "Western"
+        ]
+      },
+      {
+        "key": "examinationDate",
+        "label": "Date of examination",
+        "type": "date"
+      },
+      {
+        "key": "pastDentalFindings",
+        "label": "Past dental history",
+        "type": "multi",
+        "options": [
+          "Fractures",
+          "Orthodontic treatment",
+          "Other"
+        ]
+      },
+      {
+        "key": "familyHistory",
+        "label": "Family history",
+        "type": "text"
+      },
+      {
+        "key": "socialHistory",
+        "label": "Social history",
+        "type": "text"
+      },
+      {
+        "key": "periodontalHealth",
+        "label": "Periodontal health",
+        "type": "multi",
+        "options": [
+          "Satisfactory",
+          "Plaque",
+          "Calculus",
+          "Periodontal disease"
+        ],
+        "exclusive": [
+          "Satisfactory"
+        ]
+      },
+      {
+        "key": "teethPresent",
+        "label": "Teeth present (tooth numbers / chart notes)",
+        "type": "text"
+      },
+      {
+        "key": "caries",
+        "label": "Caries",
+        "type": "text"
+      },
+      {
+        "key": "habits",
+        "label": "Habits",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "title": "Facial and skeletal relationships",
+    "fields": [
+      {
+        "key": "facialProfile",
+        "label": "Facial profile",
+        "type": "single",
+        "options": [
+          "Straight",
+          "Convex",
+          "Concave"
+        ]
+      },
+      {
+        "key": "facialAsymmetry",
+        "label": "Facial asymmetry",
+        "type": "single",
+        "options": [
+          "Present",
+          "Absent"
+        ]
+      },
+      {
+        "key": "airway",
+        "label": "Airway",
+        "type": "single",
+        "options": [
+          "Nasal breathing",
+          "Mouth breathing"
+        ]
+      },
+      {
+        "key": "skeletalPattern",
+        "label": "Anteroposterior skeletal pattern",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2",
+          "Class 3"
+        ]
+      },
+      {
+        "key": "skeletalSeverity",
+        "label": "Skeletal discrepancy severity",
+        "type": "single",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "when": {
+          "key": "skeletalPattern",
+          "values": [
+            "Class 2",
+            "Class 3"
+          ]
+        }
+      },
+      {
+        "key": "fmpa",
+        "label": "Vertical relationship (FMPA)",
+        "type": "single",
+        "options": [
+          "Average",
+          "Low",
+          "High"
+        ]
+      },
+      {
+        "key": "transverseDiscrepancy",
+        "label": "Transverse discrepancy",
+        "type": "single",
+        "options": [
+          "Present",
+          "Absent"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Soft tissues and mandibular closure",
+    "fields": [
+      {
+        "key": "lipCompetency",
+        "label": "Lip competency",
+        "type": "single",
+        "options": [
+          "Competent",
+          "Incompetent"
+        ]
+      },
+      {
+        "key": "lipIncompetencyDegree",
+        "label": "Lip incompetency degree",
+        "type": "single",
+        "options": [
+          "Slight",
+          "Gross"
+        ],
+        "when": {
+          "key": "lipCompetency",
+          "values": [
+            "Incompetent"
+          ]
+        }
+      },
+      {
+        "key": "lipLine",
+        "label": "Lip line",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Low",
+          "High"
+        ]
+      },
+      {
+        "key": "lipContour",
+        "label": "Lip contour",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Everted",
+          "Vertical"
+        ]
+      },
+      {
+        "key": "tongueSize",
+        "label": "Tongue size",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Large"
+        ]
+      },
+      {
+        "key": "tongueAtRest",
+        "label": "Tongue at rest",
+        "type": "text"
+      },
+      {
+        "key": "tongueThrust",
+        "label": "Tongue thrust during activity",
+        "type": "single",
+        "options": [
+          "Absent",
+          "Present"
+        ]
+      },
+      {
+        "key": "tongueThrustType",
+        "label": "Tongue thrust type",
+        "type": "single",
+        "options": [
+          "Adaptive",
+          "Endogenous"
+        ],
+        "when": {
+          "key": "tongueThrust",
+          "values": [
+            "Present"
+          ]
+        }
+      },
+      {
+        "key": "closurePath",
+        "label": "Mandibular path of closure",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Displacement"
+        ]
+      },
+      {
+        "key": "displacementDirection",
+        "label": "Displacement direction",
+        "type": "single",
+        "options": [
+          "Forward",
+          "Lateral"
+        ],
+        "when": {
+          "key": "closurePath",
+          "values": [
+            "Displacement"
+          ]
+        }
+      },
+      {
+        "key": "prematureContact",
+        "label": "Premature contact",
+        "type": "text",
+        "when": {
+          "key": "closurePath",
+          "values": [
+            "Displacement"
+          ]
+        }
+      },
+      {
+        "key": "closureDeviation",
+        "label": "Mandibular deviation",
+        "type": "single",
+        "options": [
+          "Present",
+          "Absent"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Dentoalveolar examination",
+    "fields": [
+      {
+        "key": "lowerAnteriorAlignment",
+        "label": "Lower anterior segment alignment",
+        "type": "single",
+        "options": [
+          "Well aligned",
+          "Crowding",
+          "Spaced"
+        ]
+      },
+      {
+        "key": "lowerAnteriorCrowding",
+        "label": "Lower anterior segment crowding",
+        "type": "single",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "when": {
+          "key": "lowerAnteriorAlignment",
+          "values": [
+            "Crowding"
+          ]
+        }
+      },
+      {
+        "key": "lowerAnteriorInclination",
+        "label": "Lower anterior segment inclination",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Proclined",
+          "Retroclined"
+        ]
+      },
+      {
+        "key": "lowerIncisorAngulation",
+        "label": "Lower incisor angulation",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Distally angulated",
+          "Mesially angulated"
+        ]
+      },
+      {
+        "key": "lowerBuccalAlignment",
+        "label": "Lower buccal segment alignment",
+        "type": "single",
+        "options": [
+          "Well aligned",
+          "Crowding",
+          "Spaced"
+        ]
+      },
+      {
+        "key": "lowerBuccalCrowding",
+        "label": "Lower buccal segment crowding",
+        "type": "single",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "when": {
+          "key": "lowerBuccalAlignment",
+          "values": [
+            "Crowding"
+          ]
+        }
+      },
+      {
+        "key": "upperAnteriorAlignment",
+        "label": "Upper anterior segment alignment",
+        "type": "single",
+        "options": [
+          "Well aligned",
+          "Crowding",
+          "Spaced"
+        ]
+      },
+      {
+        "key": "upperAnteriorCrowding",
+        "label": "Upper anterior segment crowding",
+        "type": "single",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "when": {
+          "key": "upperAnteriorAlignment",
+          "values": [
+            "Crowding"
+          ]
+        }
+      },
+      {
+        "key": "upperAnteriorInclination",
+        "label": "Upper anterior segment inclination",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Proclined",
+          "Retroclined"
+        ]
+      },
+      {
+        "key": "upperBuccalAlignment",
+        "label": "Upper buccal segment alignment",
+        "type": "single",
+        "options": [
+          "Well aligned",
+          "Crowding",
+          "Spaced"
+        ]
+      },
+      {
+        "key": "upperBuccalCrowding",
+        "label": "Upper buccal segment crowding",
+        "type": "single",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "when": {
+          "key": "upperBuccalAlignment",
+          "values": [
+            "Crowding"
+          ]
+        }
+      },
+      {
+        "key": "canineAngulation",
+        "label": "Canine angulation",
+        "type": "single",
+        "options": [
+          "Not recordable",
+          "Vertical",
+          "Mesially angulated",
+          "Distally angulated"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Occlusal relationships",
+    "fields": [
+      {
+        "key": "incisorRelationship",
+        "label": "Incisor relationship",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2 Division 1",
+          "Class 2 Division 2",
+          "Class 3"
+        ]
+      },
+      {
+        "key": "rightMolar",
+        "label": "Right molar relationship",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2 half unit",
+          "Class 2 full unit",
+          "Class 3 half unit",
+          "Class 3 full unit"
+        ]
+      },
+      {
+        "key": "rightCanine",
+        "label": "Right canine relationship",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2",
+          "Class 3"
+        ]
+      },
+      {
+        "key": "rightOverjet",
+        "label": "Right overjet (mm)",
+        "type": "number",
+        "min": 0
+      },
+      {
+        "key": "rightOverjetSign",
+        "label": "Right overjet direction",
+        "type": "single",
+        "options": [
+          "Positive",
+          "Negative"
+        ]
+      },
+      {
+        "key": "leftMolar",
+        "label": "Left molar relationship",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2 half unit",
+          "Class 2 full unit",
+          "Class 3 half unit",
+          "Class 3 full unit"
+        ]
+      },
+      {
+        "key": "leftCanine",
+        "label": "Left canine relationship",
+        "type": "single",
+        "options": [
+          "Class 1",
+          "Class 2",
+          "Class 3"
+        ]
+      },
+      {
+        "key": "leftOverjet",
+        "label": "Left overjet (mm)",
+        "type": "number",
+        "min": 0
+      },
+      {
+        "key": "leftOverjetSign",
+        "label": "Left overjet direction",
+        "type": "single",
+        "options": [
+          "Positive",
+          "Negative"
+        ]
+      },
+      {
+        "key": "overbite",
+        "label": "Overbite",
+        "type": "single",
+        "options": [
+          "Normal",
+          "Increased / deep",
+          "Reduced",
+          "Edge to edge",
+          "Open bite"
+        ]
+      },
+      {
+        "key": "overbiteCompleteness",
+        "label": "Overbite completeness",
+        "type": "single",
+        "options": [
+          "Complete",
+          "Incomplete"
+        ],
+        "when": {
+          "key": "overbite",
+          "values": [
+            "Normal",
+            "Increased / deep",
+            "Reduced"
+          ]
+        }
+      },
+      {
+        "key": "crossScissorBites",
+        "label": "Cross bites / scissors bites",
+        "type": "text"
+      },
+      {
+        "key": "upperCentreLine",
+        "label": "Upper centre line",
+        "type": "single",
+        "options": [
+          "Coincides with facial midline",
+          "Deviated"
+        ]
+      },
+      {
+        "key": "upperCentreLineDirection",
+        "label": "Upper centre line deviation direction",
+        "type": "single",
+        "options": [
+          "Right",
+          "Left"
+        ],
+        "when": {
+          "key": "upperCentreLine",
+          "values": [
+            "Deviated"
+          ]
+        }
+      },
+      {
+        "key": "upperCentreLineMm",
+        "label": "Upper centre line deviation (mm)",
+        "type": "number",
+        "min": 0,
+        "when": {
+          "key": "upperCentreLine",
+          "values": [
+            "Deviated"
+          ]
+        }
+      },
+      {
+        "key": "lowerCentreLine",
+        "label": "Lower centre line",
+        "type": "single",
+        "options": [
+          "Coincides with facial midline",
+          "Deviated"
+        ]
+      },
+      {
+        "key": "lowerCentreLineDirection",
+        "label": "Lower centre line deviation direction",
+        "type": "single",
+        "options": [
+          "Right",
+          "Left"
+        ],
+        "when": {
+          "key": "lowerCentreLine",
+          "values": [
+            "Deviated"
+          ]
+        }
+      },
+      {
+        "key": "lowerCentreLineMm",
+        "label": "Lower centre line deviation (mm)",
+        "type": "number",
+        "min": 0,
+        "when": {
+          "key": "lowerCentreLine",
+          "values": [
+            "Deviated"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "title": "Assessment and referral",
+    "fields": [
+      {
+        "key": "classification",
+        "label": "Classification",
+        "type": "text"
+      },
+      {
+        "key": "iotnDentalHealth",
+        "label": "IOTN dental health component grade",
+        "type": "single",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "key": "iotnAesthetic",
+        "label": "IOTN aesthetic component grade",
+        "type": "single",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      },
+      {
+        "key": "investigations",
+        "label": "Special investigations",
+        "type": "multi",
+        "options": [
+          "Periapical",
+          "Upper standard occlusal",
+          "OPG",
+          "Cephalometric",
+          "CBCT"
+        ]
+      },
+      {
+        "key": "consultationSuitability",
+        "label": "Consultation suitability",
+        "type": "single",
+        "options": [
+          "Suitable",
+          "Not suitable"
+        ]
+      },
+      {
+        "key": "referrals",
+        "label": "Refer to",
+        "type": "multi",
+        "options": [
+          "Paediatric dentistry",
+          "Restorative dentistry",
+          "Periodontology",
+          "Oral surgery",
+          "Base / local hospital",
+          "School dental therapist"
+        ]
+      },
+      {
+        "key": "referralNotes",
+        "label": "Referral details",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "title": "Consultation use only",
+    "fields": [
+      {
+        "key": "treatmentCategory",
+        "label": "Treatment category",
+        "type": "single",
+        "options": [
+          "Not taken up for treatment",
+          "Mixed dentition review",
+          "Urgent interceptive treatment",
+          "Take up treatment",
+          "Placed on waiting list"
+        ]
+      },
+      {
+        "key": "notTakenReason",
+        "label": "Reason not taken up for treatment",
+        "type": "single",
+        "options": [
+          "Acceptable",
+          "Poor prognosis"
+        ],
+        "when": {
+          "key": "treatmentCategory",
+          "values": [
+            "Not taken up for treatment"
+          ]
+        }
+      },
+      {
+        "key": "treatmentAppliances",
+        "label": "Treatment appliances",
+        "type": "multi",
+        "options": [
+          "Removable",
+          "Functional",
+          "Fixed"
+        ],
+        "when": {
+          "key": "treatmentCategory",
+          "values": [
+            "Take up treatment"
+          ]
+        }
+      },
+      {
+        "key": "waitingListAppliances",
+        "label": "Waiting list appliances",
+        "type": "multi",
+        "options": [
+          "Removable",
+          "Functional",
+          "Fixed"
+        ],
+        "when": {
+          "key": "treatmentCategory",
+          "values": [
+            "Placed on waiting list"
+          ]
+        }
+      },
+      {
+        "key": "priority",
+        "label": "Priority",
+        "type": "multi",
+        "options": [
+          "Urgent",
+          "Severe malocclusion"
+        ]
+      },
+      {
+        "key": "consultantName",
+        "label": "Consultant name / typed signature",
+        "type": "text"
+      },
+      {
+        "key": "consultationDate",
+        "label": "Consultation date",
+        "type": "date"
+      }
+    ]
+  }
+]

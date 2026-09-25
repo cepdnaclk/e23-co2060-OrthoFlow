@@ -1,0 +1,240 @@
+[
+  {
+    "kind": "TREATMENT_PLAN",
+    "label": "Treatment plans",
+    "fields": [
+      {
+        "key": "diagnosis",
+        "label": "Diagnosis",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "objectives",
+        "label": "Treatment objectives",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "appliance",
+        "label": "Appliance",
+        "required": true,
+        "type": "select",
+        "options": [
+          "Removable",
+          "Functional",
+          "Fixed",
+          "Aligner",
+          "Other"
+        ]
+      },
+      {
+        "key": "plan",
+        "label": "Proposed treatment",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "alternatives",
+        "label": "Alternatives",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "risks",
+        "label": "Risks and limitations",
+        "required": false,
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "kind": "VISIT",
+    "label": "Progress visits",
+    "fields": [
+      {
+        "key": "date",
+        "label": "Visit date",
+        "required": true,
+        "type": "date"
+      },
+      {
+        "key": "findings",
+        "label": "Findings",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "procedures",
+        "label": "Procedures",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "adjustments",
+        "label": "Appliance adjustments",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "notes",
+        "label": "Clinical notes",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "nextAction",
+        "label": "Next planned action",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "nextReview",
+        "label": "Next review date",
+        "required": false,
+        "type": "date"
+      }
+    ]
+  },
+  {
+    "kind": "CONSENT",
+    "label": "Consent",
+    "fields": [
+      {
+        "key": "decision",
+        "label": "Decision",
+        "required": true,
+        "type": "select",
+        "options": [
+          "Granted",
+          "Declined",
+          "Withdrawn"
+        ]
+      },
+      {
+        "key": "scope",
+        "label": "Consent scope",
+        "required": true,
+        "type": "select",
+        "options": [
+          "Treatment",
+          "Clinical photographs",
+          "Teaching use",
+          "Research use"
+        ]
+      },
+      {
+        "key": "signedDate",
+        "label": "Consent date",
+        "required": true,
+        "type": "date"
+      },
+      {
+        "key": "signer",
+        "label": "Signatory name",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "signerRole",
+        "label": "Signatory role",
+        "required": true,
+        "type": "select",
+        "options": [
+          "Patient",
+          "Parent / guardian"
+        ]
+      },
+      {
+        "key": "relationship",
+        "label": "Guardian relationship",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "notes",
+        "label": "Consent notes",
+        "required": false,
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "kind": "RETENTION",
+    "label": "Retention",
+    "fields": [
+      {
+        "key": "completionDate",
+        "label": "Treatment completion date",
+        "required": true,
+        "type": "date"
+      },
+      {
+        "key": "retainer",
+        "label": "Retainer details",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "instructions",
+        "label": "Wear instructions",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "outcomes",
+        "label": "Treatment outcomes",
+        "required": false,
+        "type": "text"
+      },
+      {
+        "key": "reviewDate",
+        "label": "Retention review date",
+        "required": true,
+        "type": "date"
+      },
+      {
+        "key": "reviewFindings",
+        "label": "Review findings",
+        "required": false,
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "kind": "DISCHARGE",
+    "label": "Discharge",
+    "fields": [
+      {
+        "key": "date",
+        "label": "Discharge date",
+        "required": true,
+        "type": "date"
+      },
+      {
+        "key": "outcomes",
+        "label": "Final outcomes",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "reason",
+        "label": "Discharge reason",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "advice",
+        "label": "Follow-up advice",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "key": "referral",
+        "label": "Referral / continuing care",
+        "required": false,
+        "type": "text"
+      }
+    ]
+  }
+]

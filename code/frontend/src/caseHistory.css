@@ -1,0 +1,42 @@
+.case-history { color: var(--color-gray-900); min-width: 0; margin: 24px 0; }
+.case-history h2 { font-size: 20px; margin: 0 0 16px; }
+.case-history-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding-bottom: 24px; }
+.case-history-nav a { display: flex; align-items: center; gap: 12px; min-height: 60px; box-sizing: border-box; padding: 10px 14px; border: 1px solid var(--color-gray-200); border-radius: 6px; background: var(--color-surface); color: var(--color-gray-700); font-size: 13px; font-weight: 600; line-height: 1.45; text-decoration: none; transition: background 150ms ease, border-color 150ms ease, color 150ms ease; }
+.case-history-nav a > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.case-history-nav-number { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--color-gray-100); color: var(--color-gray-500); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.case-history-nav a:hover { border-color: #1684d4; background: var(--color-gray-50); }
+.case-history-nav a[aria-current="location"] { border-color: #1684d4; background: #eaf5ff; color: #0963a7; box-shadow: inset 3px 0 0 #1684d4; }
+.case-history-nav a[aria-current="location"] .case-history-nav-number { background: #0963a7; color: #fff; }
+:root[data-theme="dark"] .case-history-nav a[aria-current="location"] { background: #153047; color: #8ed0ff; border-color: #4aa7e8; }
+:root[data-theme="dark"] .case-history-nav a[aria-current="location"] .case-history-nav-number { background: #8ed0ff; color: #102337; }
+.case-history-section:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) { .case-history-nav a { transition: none; } }
+.case-history-section { border-top: 1px solid var(--color-gray-200); padding: 24px 0; scroll-margin-top: 90px; }
+.case-history-section header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.case-history-section h3 { display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 16px; margin: 0; }
+.case-history-section h3 > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.case-history-heading-number { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; height: 32px; border-radius: 50%; background: #eaf5ff; color: #0963a7; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .case-history-heading-number { background: #153047; color: #8ed0ff; }
+.case-history-section header > span { font-size: 12px; color: var(--color-gray-500); }
+.case-history-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 32px; margin: 0; }
+.case-history-field { border: 0; min-width: 0; margin: 0; padding: 0; }
+.case-history-field legend { font-size: 13px; font-weight: 600; margin-bottom: 8px; padding: 0; color: var(--color-gray-700); }
+.case-history-options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.case-history-options label { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; font-size: 13px; max-width: 100%; }
+.case-history-options input { width: 16px; height: 16px; margin: 0; flex-shrink: 0; accent-color: #1684d4; }
+.case-history-field > input, .case-history-field textarea { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--color-gray-200); border-radius: 6px; font: inherit; font-size: 13px; background: var(--color-input-bg); color: var(--color-gray-900); }
+.case-history-field textarea { resize: vertical; }
+.case-history input:focus-visible, .case-history textarea:focus-visible, .case-history button:focus-visible, .case-history a:focus-visible { outline: 2px solid #1684d4; outline-offset: 3px; }
+.case-history-clear { border: 0; background: transparent; color: var(--color-gray-500); cursor: pointer; font-size: 22px; width: 32px; height: 32px; padding: 0; }
+.case-history-error { color: #ef4444; font-size: 12px; margin: 6px 0 0; }
+.case-history-answer { min-width: 0; overflow-wrap: anywhere; }
+.case-history-answer dt { font-size: 12px; color: var(--color-gray-500); margin-bottom: 5px; }
+.case-history-answer dd { margin: 0; font-size: 14px; white-space: pre-wrap; }
+.case-history-empty { color: var(--color-gray-500); font-size: 13px; }
+@media (max-width: 800px) { .case-history-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .case-history-nav { grid-template-columns: minmax(0, 1fr); }
+  .patient-registration { padding: 16px !important; }
+  .patient-registration-field { flex-basis: 100% !important; }
+  .patient-media-header { flex-wrap: wrap; gap: 12px; }
+}

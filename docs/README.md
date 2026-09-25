@@ -40,7 +40,7 @@ The system is developed using **Spring Boot** (backend), **React** (frontend), a
 - **Frontend:** Form-driven UI with conditional logic and media management.
 - **Backend:** REST APIs with secure, role-based access and timeline-based treatment tracking.
 - **Database:** Structured schema to capture patient records, diagnostics, and clinical media.
-- **Messaging Service:** SMS/email notifications for patient appointments.
+- **Messaging Service:** email notifications for patient appointments.
 
 
 ---

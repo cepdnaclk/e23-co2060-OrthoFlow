@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,10 +17,11 @@ model User {
   regNumber     String?
   createdAt     DateTime        @default(now())
   patientAccess PatientAccess[]
+  notifications Notification[]
 }
 
 model Patient {
-  id             String        @id @default(uuid())
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   patientId      String        @unique
   name           String
   initials       String?
@@ -33,34 +34,51 @@ model Patient {
   chiefComplaint String?
   medicalHistory String?
   dentalHistory  String?
+  caseHistory    Json?
   allergies      String?
   referredBy     String?
   notes          String?
   guardian       String?
   guardianPhone  String?
+  archivedAt     DateTime?
+  archiveReason  String?
+  clinicalRecords ClinicalRecord[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   appointments   Appointment[]
   historyLogs    HistoryLog[]
   radiographs    Radiograph[]
   patientAccess  PatientAccess[]
+  notifications  Notification[]
 }
 
 model Appointment {
-  id        Int      @id @default(autoincrement())
-  patientId String
-  date      DateTime
-  time      String
-  type      String
-  duration  String
-  status    String
-  createdAt DateTime @default(now())
-  patient   Patient  @relation(fields: [patientId], references: [id])
+  clinicianId              Int?
+  id                       Int            @id @default(autoincrement())
+  patientId                String         @db.Uuid
+  date                     DateTime
+  time                     String
+  type                     String
+  duration                 String
+  status                   String
+  createdAt                DateTime       @default(now())
+  reminderDueAt            DateTime?
+  patientReminderSentAt    DateTime?
+  clinicianReminderSentAt  DateTime?
+  reminderStatus           String         @default("Pending")
+  reminderLastMessage      String?
+  reminderLastAttemptAt    DateTime?
+  patientEmailStatus       String         @default("Pending")
+  patientNotificationStatus String        @default("Pending")
+  clinicianEmailStatus     String         @default("Pending")
+  clinicianNotificationStatus String      @default("Pending")
+  patient                  Patient        @relation(fields: [patientId], references: [id])
+  notifications            Notification[]
 }
 
 model Radiograph {
   id          Int      @id @default(autoincrement())
-  patientId   String
+  patientId   String   @db.Uuid
   category    String   @default("RADIOGRAPH")
   fileUrl     String
   uploadDate  DateTime @default(now())
@@ -69,8 +87,11 @@ model Radiograph {
 }
 
 model HistoryLog {
+  actorId   Int?
+  actorName String?
+  changes   Json?
   id        Int      @id @default(autoincrement())
-  patientId String
+  patientId String   @db.Uuid
   action    String
   timestamp DateTime @default(now())
   details   String?
@@ -80,7 +101,7 @@ model HistoryLog {
 model PatientAccess {
   id        Int      @id @default(autoincrement())
   userId    Int
-  patientId String
+  patientId String   @db.Uuid
   grantedBy Int      
   createdAt DateTime @default(now())
 
@@ -88,4 +109,49 @@ model PatientAccess {
   patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   
   @@unique([userId, patientId])
+}
+
+model ClinicalRecord {
+  id Int @id @default(autoincrement())
+  patientId String @db.Uuid
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  kind String
+  version Int @default(1)
+  previousId Int? @unique
+  previous ClinicalRecord? @relation("Revisions", fields: [previousId], references: [id], onDelete: Restrict)
+  next ClinicalRecord? @relation("Revisions")
+  data Json
+  status String @default("Recorded")
+  authorId Int
+  authorName String
+  createdAt DateTime @default(now())
+  approvedBy Int?
+  approvedName String?
+  approvedAt DateTime?
+  documentName String?
+  documentFile String?
+  documentType String?
+  @@index([patientId, kind, createdAt])
+}
+
+model Notification {
+  id            Int          @id @default(autoincrement())
+  userId        Int?
+  patientId     String?      @db.Uuid
+  appointmentId Int?
+  recipientType String       @default("USER")
+  type          String       @default("APPOINTMENT_REMINDER")
+  title         String
+  message       String
+  read          Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  readAt        DateTime?
+
+  user          User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient       Patient?     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([patientId, read])
+  @@index([appointmentId])
 }

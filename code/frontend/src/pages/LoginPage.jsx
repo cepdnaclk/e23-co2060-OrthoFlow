@@ -54,11 +54,13 @@ export default function LoginPage({ onLogin }) {
       if (error) {
         setErrors({ password: error });
       } else {
+        const profileName = data?.user?.fullName || data?.user?.username || data?.username || username;
         onLogin({
-          name: data?.user?.username || data?.username || username,
-          email: "",
+          id: data?.user?.id,
+          name: profileName,
+          email: data?.user?.email || email || "",
           picture: "",
-          initials: (data?.user?.username || data?.username || username).substring(0, 2).toUpperCase(),
+          initials: profileName.substring(0, 2).toUpperCase(),
           provider: "password",
           token: data?.token || null,
           role: data?.user?.role || "STUDENT",
@@ -114,7 +116,7 @@ export default function LoginPage({ onLogin }) {
             </svg>
           </div>
           <div>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: 17, letterSpacing: "-0.3px" }}>OrthoRecords</div>
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 17, letterSpacing: 0 }}>OrthoFlow</div>
             <div style={{ color: C.gray400, fontSize: 11 }}>Case Management</div>
           </div>
         </div>
@@ -241,14 +243,14 @@ export default function LoginPage({ onLogin }) {
 
       {showPolicyModal && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, padding: 20 }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 400, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: C.surface, borderRadius: 16, padding: 24, width: "100%", maxWidth: 400, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
             <h3 style={{ margin: "0 0 12px", color: C.gray900, fontSize: 18 }}>
               {showPolicyModal === "terms" ? "Terms of Service" : "Privacy Policy"}
             </h3>
             <div style={{ color: C.gray600, fontSize: 13, lineHeight: 1.6, maxHeight: "50vh", overflowY: "auto", marginBottom: 20, paddingRight: 8 }}>
               {showPolicyModal === "terms" ? (
                 <>
-                  <p style={{ marginBottom: 8 }}>By using OrthoRecords, you agree to these terms. This system is for clinical and educational use only.</p>
+                  <p style={{ marginBottom: 8 }}>By using OrthoFlow, you agree to these terms. This system is for clinical and educational use only.</p>
                   <p style={{ marginBottom: 8 }}>You are responsible for maintaining the confidentiality of patient data in compliance with HIPAA and relevant healthcare regulations.</p>
                   <p>Do not share your account credentials with anyone. All actions are logged and audited.</p>
                 </>

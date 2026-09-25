@@ -1,5 +1,77 @@
 /* Global styles and animations for a realistic, premium feel */
 
+:root {
+  color-scheme: light;
+  --color-navy: #0f1624;
+  --color-navy-mid: #1a2540;
+  --color-sidebar: #111827;
+  --color-white: #ffffff;
+  --color-page-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-input-bg: #ffffff;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+  --color-warning-bg: #fff3cd;
+  --color-warning-border: #ffc107;
+  --color-warning-text: #856404;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-navy: #050816;
+  --color-navy-mid: #0b1220;
+  --color-sidebar: #121518;
+  --color-white: #f8fafc;
+  --color-page-bg: #191d20;
+  --color-surface: #212629;
+  --color-surface-elevated: #292f33;
+  --color-input-bg: #1b2023;
+  --color-gray-50: #252b2f;
+  --color-gray-100: #30373c;
+  --color-gray-200: #475157;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #a7b0bf;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #dbe4ef;
+  --color-gray-800: #e7edf5;
+  --color-gray-900: #f8fafc;
+  --color-warning-bg: #3a2f13;
+  --color-warning-border: #b7791f;
+  --color-warning-text: #f8d775;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--color-page-bg);
+  color: var(--color-gray-900);
+}
+
+body {
+  margin: 0;
+}
+
+input,
+select,
+textarea {
+  background: var(--color-input-bg);
+  color: var(--color-gray-900);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-gray-400);
+}
+
 @keyframes fadeSlideUp {
   0% {
     opacity: 0;
@@ -56,12 +128,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-gray-200);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-gray-400);
 }
 
 /* Scroll Reveal Animations */

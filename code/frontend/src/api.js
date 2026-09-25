@@ -79,7 +79,7 @@ export async function logoutUser() {
   return { data: { success: true }, error: null };
 }
 
-export async function registerUser({ username, email, password, role = "CLINICIAN" }) {
+export async function registerUser({ username, email, password, role = "STAFF" }) {
   return request("POST", "/auth/register", { username, email, password, role });
 }
 
@@ -106,12 +106,16 @@ export async function registerPatient(formData) {
   return request("POST", "/patient/register", formData);
 }
 
+export async function getNextPatientRegistrationNumber() {
+  return request("GET", "/patient/next-registration-number");
+}
+
 export async function getPatient(id) {
   return request("GET", `/patient/${id}`);
 }
 
-export async function getAllPatients() {
-  return request("GET", "/patient");
+export async function getAllPatients(archived = false) {
+  return request("GET", `/patient${archived ? '?archived=true' : ''}`);
 }
 
 export async function updatePatient(id, formData) {
@@ -140,8 +144,43 @@ export async function getAppointment(id) {
   return request("GET", `/appointment/${id}`);
 }
 
+export const archivePatient = (id, reason, restore = false) => request('POST', `/patient/${id}/archive`, { reason, restore });
+export const getClinicalRecords = id => request('GET', `/clinical/${id}`);
+export const approveClinicalRecord = (patientId, id) => request('POST', `/clinical/${patientId}/${id}/approve`);
+export function createClinicalRecord(patientId, payload, document) {
+  const body = new FormData();
+  body.append('payload', JSON.stringify(payload));
+  if (document) body.append('document', document);
+  return request('POST', `/clinical/${patientId}`, body, true);
+}
+export async function downloadConsent(patientId, record) {
+  const response = await fetch(`${BASE_URL}/clinical/${patientId}/${record.id}/document`, { headers: authHeaders() });
+  if (!response.ok) throw new Error('Could not download consent document');
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a'); link.href = url; link.download = record.documentName || 'consent'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+export const getClinicians = () => request('GET', '/appointment/clinicians');
+export const rescheduleAppointment = (id, data) => request('PATCH', `/appointment/${id}/reschedule`, data);
+
+export async function updateAppointmentStatus(id, status) {
+  return request("PATCH", `/appointment/${id}/status`, { status });
+}
+
 export async function sendReminder(id) {
   return request("POST", `/appointment/${id}/remind`);
+}
+
+export async function getNotifications() {
+  return request("GET", "/notification");
+}
+
+export async function markNotificationRead(id) {
+  return request("PATCH", `/notification/${id}/read`);
+}
+
+export async function markAllNotificationsRead() {
+  return request("PATCH", "/notification/read-all");
 }
 
 // ── Radiographs ───────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 This project aims to design and implement a secure, modular, and clinically aligned digital system for managing Orthodontic Case Records. Working closely with Dr. HSK Ratnatilake and her team from the Department of Community Dental at the Faculty of Dental Sciences, this system captures and organizes patient information, diagnostic data, clinical media, and treatment progress in a streamlined, digital workflow.
 
-The system supports structured data capture across the full orthodontic lifecycle—from initial assessment and diagnosis, through treatment planning and progress monitoring, to post-treatment retention. Additional features include patient history tracing, integration of digital radiographs into patient folders, and automated messaging (SMS/email) for appointment reminders.
+The system supports structured data capture across the full orthodontic lifecycle—from initial assessment and diagnosis, through treatment planning and progress monitoring, to post-treatment retention. Additional features include patient history tracing, integration of digital radiographs into patient folders, and automated messaging (email) for appointment reminders.
 
 This project bridges Software Engineering and Healthcare Digital Transformation, providing a real-world platform for students to translate complex clinical workflows into well-engineered software solutions.
 
@@ -13,7 +13,8 @@ This project bridges Software Engineering and Healthcare Digital Transformation,
 - **Digital Patient Records:** All clinical data, including history, examinations, and treatment progress, are captured digitally for accuracy and ease of access.  
 - **Radiograph Integration:** Digital radiographs are merged into individual patient folders for comprehensive record-keeping.  
 - **Patient History Tracking:** Enables longitudinal tracking of patient outcomes and treatment progress.  
-- **Automated Messaging:** SMS or message system for notifying patients about upcoming appointments or treatment schedules.  
+- **Automated Messaging:** Email reminder system for notifying patients about upcoming appointments or treatment schedules.  
+- **Appointment Email Reminders:** Sends patient email reminders and clinician email reminders 24 hours before an appointment, and records patient-facing notifications in the site notification panel.  
 - **Secure Role-Based Access:** Ensures sensitive medical data is protected and accessible only to authorized personnel.  
 - **Conditional Form Logic:** Supports complex clinical forms with validations and workflow automation.  
 - **Timeline-Based Treatment Tracking:** Visualizes the orthodontic treatment lifecycle for clinicians and patients.  
@@ -22,7 +23,7 @@ This project bridges Software Engineering and Healthcare Digital Transformation,
 
 ## Tech Stack
 
-- **Backend:** Spring Boot  
+- **Backend:** Node.js, Express, Prisma  
 - **Frontend:** React  
 - **Database:** PostgreSQL  
 
@@ -45,6 +46,56 @@ This project bridges Software Engineering and Healthcare Digital Transformation,
 - Implementing secure and audit-friendly data models.  
 - Media management for images, radiographs, and attachments.  
 - Human-centred design in a safety-critical domain.  
+
+---
+
+## PostgreSQL Setup
+
+1. Create a PostgreSQL database in pgAdmin, for example `orthoflow`.
+2. In `code/backend`, copy `.env.example` to `.env`.
+3. Set `DATABASE_URL` in `.env`, for example:
+
+   ```env
+   DATABASE_URL="postgresql://postgres:your-password@localhost:5432/orthoflow?schema=public"
+   ```
+
+4. Install backend dependencies and create the PostgreSQL tables:
+
+   ```bash
+   npm install
+   npm run db:deploy
+   npm run db:generate
+   ```
+
+For local development while changing the schema, use `npm run db:migrate`. For quick schema sync without migration history, use `npm run db:push`.
+
+---
+
+## Email Reminder Setup
+
+Backend reminders use the patient `email` saved on the patient record and the clinician email addresses. Copy `code/backend/.env.example` to `code/backend/.env`, then configure SMTP email delivery:
+
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-clinic-email@example.com"
+SMTP_PASS="your-email-app-password"
+MAIL_FROM="OrthoRecords <your-clinic-email@example.com>"
+
+```
+
+If SMTP is not configured, the reminder job still creates in-app notifications and logs `[EMAIL MOCK]` output to the backend terminal for local demonstrations. Mock output means no real email was sent.
+
+The backend scans appointments on startup, after a new appointment is scheduled, and then every `REMINDER_SCAN_INTERVAL_MINUTES` (5 minutes by default). Any scheduled appointment within `REMINDER_ADVANCE_HOURS` receives one patient reminder and one clinician reminder.
+
+To test email delivery immediately without waiting for the appointment reminder window:
+
+```bash
+npm run test:email -- patient@example.com
+```
+
+If no address is passed, the test email is sent to `SMTP_USER`.
 
 ---
 

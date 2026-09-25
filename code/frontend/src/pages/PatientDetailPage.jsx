@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { C } from "../constants.js";
+import CaseHistoryForm from '../CaseHistoryForm.jsx';
+import ClinicalWorkspace from '../ClinicalWorkspace.jsx';
+import SecureImage from '../SecureImage.jsx';
+import { SectionTabs } from '../ui.jsx';
+import { archivePatient } from '../api.js';
 import { AppLayout, Badge, Avatar } from "../components.jsx";
 import { useRef } from "react";
 import { getPatient, deletePatient, uploadRadiograph, deleteRadiograph, getPatientAccess, grantPatientAccess, revokePatientAccess, getStudents } from "../api.js";
@@ -15,6 +20,13 @@ import { toast, customAlert, confirmDialog, promptDialog } from "../dialogs.js";
 export default function PatientDetailPage({ patient: initialPatient, setPage, setSelectedPatient, onLogout, user }) {
   const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
   const [patient, setPatient]   = useState(initialPatient);
+  const [tab, setTab] = useState('Overview');
+  const [clinicalDirty, setClinicalDirty] = useState(false);
+  const changeTab = async next => {
+    if (next === tab) return;
+    if (clinicalDirty && !await confirmDialog('Leave unsaved record?', 'Your unsaved clinical entry will be discarded.')) return;
+    setTab(next);
+  };
   const [loading, setLoading]   = useState(false);
   const [fetchError, setFetchError] = useState("");
   const radioInputRef = useRef(null);
@@ -147,6 +159,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
 
   const InfoRow = ({ label, value }) => (
     <div
+      className="patient-info-row"
       style={{
         display: "flex",
         gap: 12,
@@ -172,11 +185,11 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
   );
 
   return (
-    <AppLayout active="patients" setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} user={user}>
-      <div style={{ padding: 28 }}>
+    <AppLayout active="patients" setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} user={user} compactOnMobile>
+      <div className="patient-detail" style={{ padding: 28 }}>
         {/* ── Backend warning ── */}
         {fetchError && (
-          <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#856404" }}>
+          <div style={{ background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.warningText }}>
             ⚠ {fetchError}
           </div>
         )}
@@ -204,15 +217,15 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
 
         {/* ── Patient header ── */}
         <div
+          className="patient-banner"
           style={{
             display: "flex",
             alignItems: "center",
             gap: 16,
             marginBottom: 24,
-            background: "#fff",
-            border: `1px solid ${C.gray200}`,
-            borderRadius: 14,
-            padding: 20,
+            background: 'transparent',
+            borderBottom: `1px solid ${C.gray200}`,
+            padding: '12px 0 24px',
           }}
         >
           <Avatar initials={patient.initials} size={64} />
@@ -234,12 +247,13 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
             {isClinician && (
               <div style={{ display: "flex", gap: 8 }}>
                 <button
+                  className="btn btn-danger"
                   onClick={async () => {
-                    if (await confirmDialog("Delete Patient", "Are you sure you want to delete this patient? This action cannot be undone.")) {
-                      setLoading(true);
-                      await deletePatient(patient.id);
-                      setPage("patients");
-                    }
+                    const reason = patient.archivedAt ? '' : await promptDialog('Archive reason (active appointments will be cancelled):', '');
+                    if (reason === null) return;
+                    const result = await archivePatient(patient.id, reason, Boolean(patient.archivedAt));
+                    if (result.error) return toast(result.error, 'error');
+                    setPage('patients');
                   }}
                   style={{
                     background: "none",
@@ -252,13 +266,15 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                     fontWeight: 500,
                   }}
                 >
-                  Delete
+                  {patient.archivedAt ? 'Restore patient' : 'Archive patient'}
                 </button>
                 <button
+                  className="btn btn-primary"
                   onClick={() => {
                     setSelectedPatient(patient);
                     setPage("edit-patient");
                   }}
+                  disabled={Boolean(patient.archivedAt)}
                   style={{
                     background: "none",
                     border: `1px solid ${C.blue}`,
@@ -278,6 +294,8 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
         </div>
 
         {/* ── Sections ── */}
+        <SectionTabs items={['Overview', 'Examination', 'Treatment', 'Visits', 'Media', ...(isClinician ? ['History', 'Access'] : [])]} value={tab} onChange={changeTab} label="Patient sections" />
+        <div role="tabpanel" aria-label="Overview" hidden={tab !== 'Overview'}>
         {[
           {
             title: "Personal Information",
@@ -318,12 +336,12 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           .filter(Boolean)
           .map((section) => (
             <div
+              className="patient-overview-section"
               key={section.title}
               style={{
-                background: "#fff",
-                borderRadius: 14,
-                border: `1px solid ${C.gray200}`,
-                padding: 20,
+                background: 'transparent',
+                borderBottom: `1px solid ${C.gray200}`,
+                padding: '20px 0',
                 marginBottom: 16,
               }}
             >
@@ -358,10 +376,19 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
               ))}
             </div>
           ))}
+        </div>
+
+          <div role="tabpanel" aria-label="Examination" hidden={tab !== 'Examination'} style={{ gridColumn: '1 / -1', width: '100%', minWidth: 0 }}>
+            <CaseHistoryForm value={patient.caseHistory} readOnly />
+          </div>
+          <div role="tabpanel" aria-label={tab === 'Visits' ? 'Visits' : 'Treatment'} hidden={!['Treatment', 'Visits'].includes(tab)}>
+            <ClinicalWorkspace patient={patient} user={user} view={tab === 'Visits' ? 'visits' : 'treatment'} resetKey={tab} onDirtyChange={setClinicalDirty} onPatientChange={async () => { const result = await getPatient(patient.id); if (result.data) setPatient(result.data); }} />
+          </div>
 
           {/* ── Case History Images ── */}
+          <div role="tabpanel" aria-label="Media" hidden={tab !== 'Media'}>
           <div style={{
-            background: "#fff",
+            background: C.surface,
             borderRadius: 14,
             border: `1px solid ${C.gray200}`,
             padding: 20,
@@ -386,7 +413,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                   <button
                     style={{ background: C.blue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}
                     onClick={() => caseInputRef.current?.click()}
-                    disabled={uploadingImage}
+                    disabled={uploadingImage || Boolean(patient.archivedAt)}
                   >
                     {uploadingImage ? "Uploading..." : "Upload Case History Image"}
                   </button>
@@ -398,7 +425,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
               {(patient.radiographs || []).filter(r => r.category === "CASE_HISTORY").length > 0 ? (
                 (patient.radiographs || []).filter(r => r.category === "CASE_HISTORY").map(r => (
                   <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                    <img 
+                    <SecureImage 
                       src={`http://localhost:8080${r.fileUrl}`} 
                       alt={r.description} 
                       style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
@@ -416,7 +443,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
 
           {/* ── Radiographs ── */}
           <div style={{
-            background: "#fff",
+            background: C.surface,
             borderRadius: 14,
             border: `1px solid ${C.gray200}`,
             padding: 20,
@@ -441,7 +468,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                   <button
                     style={{ background: C.blue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600, opacity: uploadingImage ? 0.7 : 1 }}
                     onClick={() => radioInputRef.current?.click()}
-                    disabled={uploadingImage}
+                    disabled={uploadingImage || Boolean(patient.archivedAt)}
                   >
                     {uploadingImage ? "Uploading..." : "Upload Radiograph"}
                   </button>
@@ -453,7 +480,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
               {(patient.radiographs || []).filter(r => r.category !== "CASE_HISTORY").length > 0 ? (
                 (patient.radiographs || []).filter(r => r.category !== "CASE_HISTORY").map(r => (
                   <div key={r.id} className="card-hover" style={{ minWidth: 160, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8 }}>
-                    <img 
+                    <SecureImage 
                       src={`http://localhost:8080${r.fileUrl}`} 
                       alt={r.description} 
                       style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4, cursor: "pointer" }} 
@@ -470,9 +497,11 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           </div>
 
           {/* ── Access Management ── */}
+          </div>
+          <div role="tabpanel" aria-label="Access" hidden={tab !== 'Access'}>
           {isClinician && (
             <div style={{
-              background: "#fff",
+              background: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.gray200}`,
               padding: 20,
@@ -521,9 +550,11 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           )}
 
           {/* ── Patient History ── */}
+          </div>
+          <div role="tabpanel" aria-label="History" hidden={tab !== 'History'}>
           {isClinician && (
             <div style={{
-              background: "#fff",
+              background: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.gray200}`,
               padding: 20,
@@ -546,6 +577,8 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                       <div>
                         <div style={{ color: C.gray900, fontSize: 13, fontWeight: 600 }}>{log.action}</div>
                         <div style={{ color: C.gray500, fontSize: 12 }}>{log.details}</div>
+                        {log.actorName && <div style={{ color: C.gray500, fontSize: 12 }}>By {log.actorName}</div>}
+                        {log.changes && <details><summary>View recorded changes</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{JSON.stringify(log.changes, null, 2)}</pre></details>}
                       </div>
                     </div>
                   ))
@@ -557,6 +590,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
           )}
 
         {/* ── Full Screen Image Modal ── */}
+        </div>
         {fullScreenImage && createPortal(
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
@@ -584,7 +618,7 @@ export default function PatientDetailPage({ patient: initialPatient, setPage, se
                 ×
               </button>
             </div>
-            <img 
+            <SecureImage 
               src={`http://localhost:8080${fullScreenImage.fileUrl}`} 
               alt={fullScreenImage.description} 
               style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} 

@@ -1,0 +1,23 @@
+.appointment-row { flex-wrap: wrap; }
+.appointment-row > div:nth-child(2) { flex-basis: 180px !important; }
+.appointment-modal { max-height: 90vh; overflow-y: auto !important; }
+.appointment-modal input, .appointment-modal select { box-sizing: border-box; min-width: 0; }
+.appointment-modal form > div > div { min-width: 0; }
+.appointment-modal form button { white-space: normal; }
+.appointment-modal > div:first-child { gap: 12px; }
+.appointment-modal h2 { min-width: 0; }
+@media (max-width: 600px) {
+  .appointment-modal form > div:has(> div) { flex-direction: column; }
+}
+ .appointment-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+ .appointment-toolbar .section-tabs { margin:0; flex:1; }
+ .appointment-toolbar select { padding:8px; background:var(--color-surface); color:var(--color-gray-900); border:1px solid var(--color-gray-200); border-radius:6px; }
+ .appointment-calendar { color:var(--color-gray-900); --fc-border-color:var(--color-gray-200); --fc-page-bg-color:var(--color-surface); --fc-neutral-bg-color:var(--color-gray-100); --fc-today-bg-color:rgba(8,124,167,.1); --fc-button-bg-color:#087ca7; --fc-button-border-color:#087ca7; --fc-button-hover-bg-color:#066583; --fc-event-bg-color:#087ca7; }
+ .appointment-calendar .fc-toolbar-title { font-size:18px; }
+ .appointment-calendar .fc { background:var(--color-surface); }
+ .appointment-calendar .selected-day { box-shadow:inset 0 0 0 2px #087ca7; }
+ .appointment-calendar .fc-event { cursor:pointer; }
+ .appointment-calendar .fc-daygrid-day-frame { min-height:85px; }
+ .day-agenda-title { font-size:17px; margin:24px 0 12px; }
+ @media(max-width:700px) { .appointment-calendar .fc-header-toolbar { flex-wrap:wrap; gap:12px; } .appointment-calendar .fc-toolbar-title { font-size:16px; } .appointment-calendar .fc-daygrid-day-frame { min-height:64px; } .appointment-calendar .fc-event-title { overflow:hidden; } .appointment-calendar .fc { font-size:11px; } .appointment-row { flex-wrap:wrap; } }
+ @media(max-width:700px) { .appointment-calendar .fc-event-time { display:none; } .appointment-calendar .fc-event-title { text-overflow:ellipsis; } .appointment-calendar .fc-daygrid-event { margin:2px 0; padding:2px; } }

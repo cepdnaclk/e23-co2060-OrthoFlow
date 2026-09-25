@@ -12,6 +12,7 @@ import { getAllPatients } from "../api.js";
 export default function PatientsPage({ setPage, setSelectedPatient, onLogout, user }) {
   const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
   const [search, setSearch] = useState("");
+  const [archived, setArchived] = useState(false);
   const [patients, setPatients] = useState([]); // removed fallback
   const [loadError, setLoadError] = useState("");
   const [loadingList, setLoadingList] = useState(true);
@@ -19,29 +20,33 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
   useEffect(() => {
     const fetchPatients = async () => {
       setLoadingList(true);
-      const { data, error } = await getAllPatients();
+      const { data, error } = await getAllPatients(archived);
+      setPatients([]);
       if (error) {
         // Backend unreachable — keep mock data, show soft warning
         setLoadError("Could not reach backend — showing local data.");
       } else if (Array.isArray(data) && data.length > 0) {
         // Normalise backend fields to match our UI shape
-        const normalised = data.map((p) => ({
-          ...p,
-          id:       p.id,
-          displayId: p.patientId || p.id || p.registrationNumber || "—",
-          name:     p.name      || p.fullName     || "Unknown",
-          initials: (p.name || p.fullName || "?")
-                      .split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase(),
-          status:   p.status    || "Assessment",
-          phone:    p.telephone || p.phone        || "",
-          dob:      p.dob ? new Date(p.dob).toLocaleDateString() : (p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString() : ""),
-        }));
+        const normalised = data.map((p) => {
+          const friendlyId = p.patientId || p.registrationNumber || "";
+          return {
+            ...p,
+            id: p.id,
+            displayId: friendlyId && friendlyId !== p.id ? friendlyId : "",
+            name: p.name || p.fullName || "Unknown",
+            initials: (p.name || p.fullName || "?")
+                        .split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase(),
+            status: p.status || "Assessment",
+            phone: p.telephone || p.phone || "",
+            dob: p.dob ? new Date(p.dob).toLocaleDateString() : (p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString() : ""),
+          };
+        });
         setPatients(normalised);
       }
       setLoadingList(false);
     };
     fetchPatients();
-  }, []);
+  }, [archived]);
 
   const filtered = patients.filter(
     (p) =>
@@ -55,7 +60,7 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
       <div style={{ padding: 28 }}>
         {/* ── Backend status banner ── */}
         {loadError && (
-          <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#856404" }}>
+          <div style={{ background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.warningText }}>
             ⚠ {loadError}
           </div>
         )}
@@ -108,13 +113,14 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
           )}
         </Reveal>
 
+        {isClinician && <label style={{ display: 'block', marginBottom: 16, color: C.gray700 }}><input type="checkbox" checked={archived} onChange={event => setArchived(event.target.checked)} /> Archived patients</label>}
         {/* ── Search ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "#fff",
+            background: C.surface,
             border: `1px solid ${C.gray200}`,
             borderRadius: 10,
             padding: "10px 16px",
@@ -156,7 +162,7 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
 
         {/* ── Patient List ── */}
         <Reveal style={{
-          background: "#fff",
+          background: C.surface,
           borderRadius: 14,
           border: `1px solid ${C.gray200}`,
           overflow: "hidden",
@@ -223,7 +229,7 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
                   (e.currentTarget.style.background = C.gray50)
                 }
                 onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#fff")
+                  (e.currentTarget.style.background = C.surface)
                 }
               >
                 {/* Name + initials */}
@@ -241,7 +247,7 @@ export default function PatientsPage({ setPage, setSelectedPatient, onLogout, us
                     >
                       {p.name}
                     </div>
-                    <div style={{ fontSize: 12, color: C.gray500 }}>{p.displayId}</div>
+                    {p.displayId && <div style={{ fontSize: 12, color: C.gray500 }}>{p.displayId}</div>}
                   </div>
                 </div>
 

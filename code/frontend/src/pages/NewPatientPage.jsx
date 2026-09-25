@@ -1,18 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRef } from "react";
 import { C, PATIENT_STATUSES } from "../constants.js";
-import { registerPatient, updatePatient, uploadRadiograph, deleteRadiograph } from "../api.js";
+import { registerPatient, updatePatient, uploadRadiograph, deleteRadiograph, getNextPatientRegistrationNumber } from "../api.js";
 import { AppLayout } from "../components.jsx";
+import CaseHistoryForm, { validateCaseHistory } from '../CaseHistoryForm.jsx';
+import SecureImage from '../SecureImage.jsx';
+import { ArrowLeft, ArrowRight, Save, Check } from 'lucide-react';
 import { toast, customAlert, confirmDialog, promptDialog } from "../dialogs.js";
 
-const generateRegNum = () => {
-  const p1 = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  const p2 = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-  return `ORT-${p1}-${p2}`;
-};
+const REG_NUM_PATTERN = /^ORT-\d{4}-\d{4}$/;
 
 const getEmptyForm = () => ({
-  regNum: generateRegNum(),
+  regNum: "",
   fullName: "",
   dob: "",
   gender: "",
@@ -28,6 +27,7 @@ const getEmptyForm = () => ({
   dentalHistory: "",
   allergies: "",
   notes: "",
+  caseHistory: {},
 });
 
 /**
@@ -56,11 +56,16 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
         dentalHistory: editPatient.dentalHistory || "",
         allergies: editPatient.allergies || "",
         notes: editPatient.notes || "",
+        caseHistory: editPatient.caseHistory || {},
       };
     }
     return getEmptyForm();
   });
   const [errors, setErrors] = useState({});
+  const [caseErrors, setCaseErrors] = useState({});
+  const [step, setStep] = useState(0);
+  const stages = ['Personal', 'History', 'Examination', 'Media', 'Review'];
+  const initialForm = useRef(JSON.stringify({ ...form, regNum: '' }));
   const [radiographs, setRadiographs] = useState(editPatient?.radiographs || []);
   // For new patients: staged images awaiting upload after patient creation
   const [pendingImages, setPendingImages] = useState([]); // [{ file, description, category, previewUrl }]
@@ -68,6 +73,21 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
   const caseInputRef = useRef(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const isClinician = user?.role === 'STAFF' || user?.role === 'ADMIN';
+
+  useEffect(() => {
+    if (editPatient) return;
+
+    let active = true;
+    getNextPatientRegistrationNumber().then(({ data }) => {
+      if (active && data?.registrationNumber) {
+        setForm((current) => ({ ...current, regNum: data.registrationNumber }));
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [editPatient]);
 
   const handleFileUpload = async (e, category) => {
     const file = e.target.files[0];
@@ -118,16 +138,42 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
   const validate = () => {
     const e = {};
     if (!form.regNum.trim()) e.regNum = "Required";
+    else if (!REG_NUM_PATTERN.test(form.regNum.trim())) e.regNum = "Use format ORT-2026-0001";
     if (!form.fullName.trim()) e.fullName = "Required";
     return e;
   };
 
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const leavePage = async () => {
+    const dirty = initialForm.current !== JSON.stringify({ ...form, regNum: '' }) || pendingImages.length > 0;
+    if (dirty && !await confirmDialog('Discard unsaved changes?', 'Leave this patient form without saving?')) return;
+    setPage('patients');
+  };
+  const moveStep = next => {
+    if (next > step) {
+      const personalErrors = validate();
+      if (Object.keys(personalErrors).length) { setErrors(personalErrors); setStep(0); setSubmitError('Complete the highlighted patient details.'); return; }
+      if (next > 2) {
+        const clinicalErrors = validateCaseHistory(form.caseHistory);
+        if (Object.keys(clinicalErrors).length) { setCaseErrors(clinicalErrors); setStep(2); return; }
+      }
+    }
+    setStep(next); setSubmitError('');
+    document.querySelector('.app-content')?.scrollTo({ top: 0, behavior: 'auto' });
+  };
 
   const handleSubmit = async () => {
+    if (submitting) return;
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    const clinicalErrors = validateCaseHistory(form.caseHistory);
+    setErrors(e);
+    setCaseErrors(clinicalErrors);
+    if (Object.keys(e).length || Object.keys(clinicalErrors).length) {
+      setStep(Object.keys(e).length ? 0 : 2);
+      setSubmitError('Please correct the highlighted fields before saving.');
+      return;
+    }
     setSubmitting(true);
     setSubmitError("");
     
@@ -166,8 +212,8 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
 
 
   return (
-    <AppLayout active="patients" setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} user={user}>
-      <div style={{ padding: 28 }}>
+    <AppLayout active="patients" setPage={setPage} setSelectedPatient={setSelectedPatient} onLogout={onLogout} user={user} compactOnMobile>
+      <div className="patient-registration" style={{ padding: 28 }}>
         {/* ── Header ── */}
         <div
           style={{
@@ -178,7 +224,7 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
           }}
         >
           <button
-            onClick={() => setPage("patients")}
+            onClick={leavePage}
             style={{
               background: "none",
               border: "none",
@@ -205,10 +251,13 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
         </div>
 
         {/* ── Personal Information ── */}
+        <nav className="registration-steps" aria-label="Registration stages">{stages.map((label, index) => <button key={label} type="button" aria-current={step === index ? 'step' : undefined} onClick={() => moveStep(index)}><span>{String(index + 1).padStart(2, '0')}</span>{label}</button>)}</nav>
+        <div hidden={step !== 0}>
         <Section title="Personal Information">
-          <TextInput label="Registration Number *" fieldKey="regNum" placeholder="e.g., ORT-2024-001" half form={form} set={set} errors={errors} />
+          <TextInput label="Registration Number *" fieldKey="regNum" placeholder="Generating registration number..." half readOnly={!editPatient} form={form} set={set} errors={errors} />
           <TextInput label="Full Name *" fieldKey="fullName" placeholder="Patient full name" half form={form} set={set} errors={errors} />
           <TextInput label="Date of Birth" fieldKey="dob" type="date" placeholder="" half form={form} set={set} errors={errors} />
+          <TextInput label="Age (years)" fieldKey="age" half readOnly form={{ age: ageAtExamination(form.dob, form.caseHistory.examinationDate) }} set={set} errors={{}} />
           <SelectInput
             label="Gender"
             fieldKey="gender"
@@ -233,6 +282,8 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
         </Section>
 
         {/* ── Clinical Information ── */}
+        </div>
+        <div hidden={step !== 1}>
         <Section title="Clinical Information">
           <TextInput label="Referred By" fieldKey="referredBy" placeholder="Referring doctor or clinic" half form={form} set={set} errors={errors} />
           <SelectInput label="Status" fieldKey="status" half options={PATIENT_STATUSES} form={form} set={set} errors={errors} />
@@ -243,12 +294,21 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
           <TextArea label="Notes" fieldKey="notes" placeholder="Additional notes…" form={form} set={set} errors={errors} />
         </Section>
 
+        </div>
+        <div hidden={step !== 2}>
+        {isClinician && <CaseHistoryForm value={form.caseHistory} errors={caseErrors} onChange={value => {
+          set('caseHistory', value);
+          setCaseErrors({});
+        }} />}
+
         {/* ── Image Management ── */}
+        </div>
+        <div hidden={step !== 3}>
         {isClinician && (
           <Section title="Image Management">
             {/* Case History */}
             <div style={{ flex: "0 0 100%", marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div className="patient-media-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Case History Images</div>
                   {!editPatient && <div style={{ fontSize: 11, color: C.gray400, marginTop: 2 }}>Images will be uploaded after patient is created.</div>}
@@ -263,9 +323,9 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingBottom: 8 }}>
                 {(editPatient ? radiographs.filter(r => r.category === "CASE_HISTORY") : pendingImages.filter(r => r.category === "CASE_HISTORY")).length > 0 ? (
                   (editPatient ? radiographs.filter(r => r.category === "CASE_HISTORY") : pendingImages.filter(r => r.category === "CASE_HISTORY")).map(r => (
-                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: "#fafafa" }}>
+                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
                       <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
-                      <img src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <SecureImage src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
                       <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
                       {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>
@@ -278,7 +338,7 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
 
             {/* Radiographs */}
             <div style={{ flex: "0 0 100%" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div className="patient-media-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 13, color: C.gray700 }}>Radiographs</div>
                   {!editPatient && <div style={{ fontSize: 11, color: C.gray400, marginTop: 2 }}>Images will be uploaded after patient is created.</div>}
@@ -293,9 +353,9 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingBottom: 8 }}>
                 {(editPatient ? radiographs.filter(r => r.category !== "CASE_HISTORY") : pendingImages.filter(r => r.category === "RADIOGRAPH")).length > 0 ? (
                   (editPatient ? radiographs.filter(r => r.category !== "CASE_HISTORY") : pendingImages.filter(r => r.category === "RADIOGRAPH")).map(r => (
-                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: "#fafafa" }}>
+                    <div key={r.id} style={{ position: "relative", width: 140, border: `1px solid ${C.gray200}`, borderRadius: 8, padding: 8, background: C.gray50 }}>
                       <button onClick={() => handleDeleteImage(r.id)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(220,38,38,0.85)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
-                      <img src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
+                      <SecureImage src={editPatient ? `http://localhost:8080${r.fileUrl}` : r.previewUrl} alt={r.description} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 4 }} />
                       <div style={{ fontSize: 11, color: C.gray700, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.description}</div>
                       {!editPatient && <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>⏳ Pending</div>}
                     </div>
@@ -309,26 +369,33 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
         )}
 
         {/* ── Actions ── */}
+        </div>
+        <section hidden={step !== 4} aria-label="Registration review">
+          <h2 style={{ fontSize: 20, color: C.gray900 }}>Review patient record</h2>
+          <dl className="registration-review">{[['Registration number', form.regNum], ['Patient', form.fullName], ['Date of birth', form.dob], ['Email', form.email], ['Phone', form.phone], ['Status', form.status], ['Chief complaint', form.chiefComplaint], ['Allergies', form.allergies], ['Examination fields recorded', Object.values(form.caseHistory).filter(value => Array.isArray(value) ? value.length : value !== '' && value != null).length], ['Images', radiographs.length + pendingImages.length]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value === '' ? 'Not recorded' : value}</dd></div>)}</dl>
+        </section>
         {submitError && (
           <div style={{ color: C.red, fontSize: 13, marginBottom: 8, textAlign: "right" }}>
             ⚠ {submitError}
           </div>
         )}
         <div
+          className="registration-actions"
           style={{
             display: "flex",
             justifyContent: "flex-end",
+            flexWrap: "wrap",
             gap: 12,
             marginTop: 8,
           }}
         >
           <button
-            onClick={() => setPage("patients")}
+            onClick={leavePage}
             style={{
               padding: "10px 22px",
               borderRadius: 10,
               border: `1px solid ${C.gray200}`,
-              background: "#fff",
+              background: C.surface,
               fontSize: 14,
               cursor: "pointer",
               color: C.gray700,
@@ -337,7 +404,11 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
           >
             Cancel
           </button>
+          {step > 0 && <button type="button" className="btn" onClick={() => moveStep(step - 1)}><ArrowLeft size={16} />Back</button>}
+          {step < 4 && <button type="button" className="btn btn-primary" onClick={() => moveStep(step + 1)}>Continue<ArrowRight size={16} /></button>}
           <button
+            hidden={step !== 4 && !editPatient}
+            className="btn btn-primary"
             onClick={handleSubmit}
             disabled={submitting}
             style={{
@@ -372,17 +443,29 @@ export default function NewPatientPage({ setPage, setSelectedPatient, onLogout, 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TextInput = ({ label, fieldKey, placeholder, type = "text", half = false, form, set, errors }) => (
-  <div style={{ flex: `0 0 ${half ? "calc(50% - 8px)" : "100%"}`, minWidth: 0 }}>
-    <label style={labelStyle}>{label}</label>
+function ageAtExamination(dob, examinationDate) {
+  if (!dob) return '';
+  const birth = new Date(`${dob}T00:00:00`);
+  const date = examinationDate ? new Date(`${examinationDate}T00:00:00`) : new Date();
+  if (!Number.isFinite(birth.getTime()) || !Number.isFinite(date.getTime()) || birth > date) return '';
+  return date.getFullYear() - birth.getFullYear() - (date.getMonth() < birth.getMonth() || (date.getMonth() === birth.getMonth() && date.getDate() < birth.getDate()) ? 1 : 0);
+}
+
+const TextInput = ({ label, fieldKey, placeholder, type = "text", half = false, readOnly = false, form, set, errors }) => (
+  <div className="patient-registration-field" style={{ flex: `0 0 ${half ? "calc(50% - 8px)" : "100%"}`, minWidth: 0 }}>
+    <label htmlFor={`patient-${fieldKey}`} style={labelStyle}>{label}</label>
     <input
+      id={`patient-${fieldKey}`}
       type={type}
       value={form[fieldKey]}
-      onChange={(e) => set(fieldKey, e.target.value)}
+      readOnly={readOnly}
+      onChange={(e) => !readOnly && set(fieldKey, e.target.value)}
       placeholder={placeholder}
       style={{
         ...inputStyle,
         borderColor: errors[fieldKey] ? C.red : C.gray200,
+        background: readOnly ? C.gray50 : C.surface,
+        cursor: readOnly ? "not-allowed" : "text",
       }}
     />
     {errors[fieldKey] && (
@@ -394,12 +477,12 @@ const TextInput = ({ label, fieldKey, placeholder, type = "text", half = false, 
 );
 
 const SelectInput = ({ label, fieldKey, options, half = false, form, set, errors }) => (
-  <div style={{ flex: `0 0 ${half ? "calc(50% - 8px)" : "100%"}`, minWidth: 0 }}>
+  <div className="patient-registration-field" style={{ flex: `0 0 ${half ? "calc(50% - 8px)" : "100%"}`, minWidth: 0 }}>
     <label style={labelStyle}>{label}</label>
     <select
       value={form[fieldKey]}
       onChange={(e) => set(fieldKey, e.target.value)}
-      style={{ ...inputStyle, background: "#fff" }}
+      style={{ ...inputStyle, background: C.surface }}
     >
       {options.map((o) =>
         typeof o === "string" ? (
@@ -429,10 +512,11 @@ function Section({ title, children }) {
   return (
     <div
       style={{
-        background: "#fff",
-        borderRadius: 14,
-        border: `1px solid ${C.gray200}`,
-        padding: 20,
+        background: C.surface,
+        borderRadius: 0,
+        border: 'none',
+        borderBottom: `1px solid ${C.gray200}`,
+        padding: '20px 0',
         marginBottom: 16,
       }}
     >

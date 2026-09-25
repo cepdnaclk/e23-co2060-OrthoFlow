@@ -1,24 +1,47 @@
 // ─── Color Palette ────────────────────────────────────────────────────────────
 export const C = {
-  navy: "#0f1624",
-  navyMid: "#1a2540",
-  sidebar: "#111827",
+  navy: "var(--color-navy)",
+  navyMid: "var(--color-navy-mid)",
+  sidebar: "var(--color-sidebar)",
   blue: "#2196f3",
   blueLight: "#42a5f5",
   teal: "#00bfa5",
-  white: "#ffffff",
-  gray50: "#f8fafc",
-  gray100: "#f1f5f9",
-  gray200: "#e2e8f0",
-  gray400: "#94a3b8",
-  gray500: "#64748b",
-  gray700: "#334155",
-  gray900: "#0f172a",
+  white: "var(--color-white)",
+  surface: "var(--color-surface)",
+  surfaceElevated: "var(--color-surface-elevated)",
+  inputBg: "var(--color-input-bg)",
+  pageBg: "var(--color-page-bg)",
+  warningBg: "var(--color-warning-bg)",
+  warningBorder: "var(--color-warning-border)",
+  warningText: "var(--color-warning-text)",
+  gray50: "var(--color-gray-50)",
+  gray100: "var(--color-gray-100)",
+  gray200: "var(--color-gray-200)",
+  gray400: "var(--color-gray-400)",
+  gray500: "var(--color-gray-500)",
+  gray600: "var(--color-gray-600)",
+  gray700: "var(--color-gray-700)",
+  gray800: "var(--color-gray-800)",
+  gray900: "var(--color-gray-900)",
   green: "#10b981",
   orange: "#f59e0b",
   purple: "#8b5cf6",
   red: "#ef4444",
 };
+
+export function applyStoredTheme() {
+  const savedTheme = localStorage.getItem("ortho_theme");
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  const theme = savedTheme || (prefersDark ? "dark" : "light");
+  document.documentElement.dataset.theme = theme;
+  return theme;
+}
+
+export function setStoredTheme(theme) {
+  localStorage.setItem("ortho_theme", theme);
+  document.documentElement.dataset.theme = theme;
+  window.dispatchEvent(new CustomEvent("themeChanged", { detail: { theme } }));
+}
 
 // ─── Status Badge Colors ──────────────────────────────────────────────────────
 export const STATUS_COLORS = {
@@ -34,6 +57,7 @@ export const STATUS_COLORS = {
 
 // ─── Patient Statuses ─────────────────────────────────────────────────────────
 export const PATIENT_STATUSES = [
+  "Discharged",
   "Assessment",
   "Planning",
   "Active Treatment",

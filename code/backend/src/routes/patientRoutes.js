@@ -1,21 +1,38 @@
 const express = require("express");
 const prisma = require("../prismaClient");
+const { actor } = require('../utils/patientAccess');
+const { validateCaseHistory } = require('../utils/caseHistory');
 const { authenticateToken, authorizeRoles } = require("./authRoutes");
+const { getNextPatientRegistrationNumber, parsePatientRegistrationNumber } = require("../utils/patientRegistration");
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
+router.get("/next-registration-number", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
+  try {
+    const registrationNumber = await getNextPatientRegistrationNumber(prisma);
+    res.json({ registrationNumber });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/register", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const data = req.body;
+    const caseHistory = validateCaseHistory(data.caseHistory ?? {});
+    if (Object.keys(caseHistory.errors).length) {
+      return res.status(400).json({ message: 'Please correct the case history fields.', fields: caseHistory.errors });
+    }
     
     const s = (val) => (val === "" ? null : val);
+    const patientId = await getNextPatientRegistrationNumber(prisma);
 
     const patient = await prisma.patient.create({
       data: {
         name: data.name || data.fullName,
-        patientId: data.patientId || data.regNum || `ORT-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        patientId,
         dob: data.dob ? new Date(data.dob) : null,
         gender: s(data.gender),
         phone: s(data.phone),
@@ -28,12 +45,14 @@ router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
         chiefComplaint: s(data.chiefComplaint),
         medicalHistory: s(data.medicalHistory),
         dentalHistory: s(data.dentalHistory),
+        caseHistory: caseHistory.value,
         allergies: s(data.allergies),
         notes: s(data.notes),
         initials: (data.name || data.fullName || "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
         historyLogs: {
           create: {
             action: "Patient Registered",
+            ...await actor(req.user),
             details: "Initial record created",
           }
         }
@@ -46,7 +65,7 @@ router.post("/register", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
+router.get("/", authorizeRoles("STAFF", "STUDENT", "ADMIN"), async (req, res) => {
   try {
     if (req.user.role === "STUDENT") {
       const accesses = await prisma.patientAccess.findMany({
@@ -56,13 +75,14 @@ router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
       const patientIds = accesses.map(a => a.patientId);
       
       const patients = await prisma.patient.findMany({
-        where: { id: { in: patientIds } },
+        where: { id: { in: patientIds }, archivedAt: null },
         orderBy: { updatedAt: 'desc' }
       });
       return res.json(patients);
     }
 
     const patients = await prisma.patient.findMany({
+      where: req.query.archived === 'true' ? { archivedAt: { not: null } } : { archivedAt: null },
       orderBy: { updatedAt: 'desc' }
     });
     res.json(patients);
@@ -71,7 +91,7 @@ router.get("/", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.get("/history/all", authorizeRoles("STAFF"), async (req, res) => {
+router.get("/history/all", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const logs = await prisma.historyLog.findMany({
       orderBy: { timestamp: 'desc' },
@@ -87,7 +107,7 @@ router.get("/history/all", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.get("/:id", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
+router.get("/:id", authorizeRoles("STAFF", "STUDENT", "ADMIN"), async (req, res) => {
   try {
     if (req.user.role === "STUDENT") {
       const access = await prisma.patientAccess.findFirst({
@@ -111,14 +131,30 @@ router.get("/:id", authorizeRoles("STAFF", "STUDENT"), async (req, res) => {
   }
 });
 
-router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.put("/:id", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const data = req.body;
     const s = (val) => (val === "" ? null : val);
     
     const updateData = {};
+    const previous = await prisma.patient.findUnique({ where: { id: req.params.id } });
+    if (!previous) return res.status(404).json({ message: 'Patient not found' });
+    if (previous.archivedAt) return res.status(409).json({ message: 'Restore the patient before editing' });
+    if (data.caseHistory !== undefined) {
+      const caseHistory = validateCaseHistory(data.caseHistory);
+      if (Object.keys(caseHistory.errors).length) {
+        return res.status(400).json({ message: 'Please correct the case history fields.', fields: caseHistory.errors });
+      }
+      updateData.caseHistory = caseHistory.value;
+    }
     if (data.name || data.fullName) updateData.name = data.name || data.fullName;
-    if (data.patientId || data.regNum) updateData.patientId = data.patientId || data.regNum;
+    if (data.patientId || data.regNum) {
+      const patientId = data.patientId || data.regNum;
+      if (!parsePatientRegistrationNumber(patientId)) {
+        return res.status(400).json({ message: "Registration number must use the format ORT-YYYY-0001" });
+      }
+      updateData.patientId = patientId;
+    }
     if (data.dob !== undefined) updateData.dob = data.dob ? new Date(data.dob) : null;
     if (data.gender !== undefined) updateData.gender = s(data.gender);
     if (data.phone !== undefined) updateData.phone = s(data.phone);
@@ -138,17 +174,22 @@ router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
       updateData.initials = updateData.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
     }
 
-    const patient = await prisma.patient.update({
+    const patient = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(2060)`;
+      const current = await tx.patient.findUnique({ where: { id: req.params.id } });
+      if (!current || current.archivedAt) throw new Error('Patient is unavailable for editing');
+      return tx.patient.update({
       where: { id: req.params.id },
-      data: updateData
-    });
-    
-    await prisma.historyLog.create({
       data: {
-        patientId: patient.id,
-        action: "Patient Updated",
-        details: "Record modified by user"
+        ...updateData,
+        historyLogs: { create: {
+          action: "Patient Updated",
+          ...await actor(req.user, tx),
+          changes: JSON.parse(JSON.stringify({ before: Object.fromEntries(Object.keys(updateData).map(key => [key, current[key]])), after: updateData })),
+          details: data.caseHistory !== undefined ? `Record and orthodontic case history updated by user ${req.user.id}` : "Record modified by user"
+        } }
       }
+      });
     });
 
     res.json(patient);
@@ -157,22 +198,28 @@ router.put("/:id", authorizeRoles("STAFF"), async (req, res) => {
   }
 });
 
-router.delete("/:id", authorizeRoles("STAFF"), async (req, res) => {
+router.post("/:id/archive", authorizeRoles("STAFF", "ADMIN"), async (req, res) => {
   try {
     const id = req.params.id;
-    
-    // Delete associated records first
-    await prisma.historyLog.deleteMany({ where: { patientId: id } });
-    await prisma.appointment.deleteMany({ where: { patientId: id } });
-    await prisma.radiograph.deleteMany({ where: { patientId: id } });
-    
-    // Delete patient
-    await prisma.patient.delete({ where: { id } });
-    
-    res.json({ success: true, message: "Patient deleted successfully" });
+    const restore = req.body.restore === true;
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.trim() : '';
+    if (!restore && !reason) return res.status(400).json({ message: 'An archive reason is required' });
+    const patient = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(2060)`;
+      const updated = await tx.patient.update({ where: { id }, data: { archivedAt: restore ? null : new Date(), archiveReason: restore ? null : reason } });
+      if (!restore) {
+        await tx.appointment.updateMany({ where: { patientId: id, status: { in: ['Scheduled', 'Confirmed'] } }, data: { status: 'Cancelled', reminderStatus: 'Not required', reminderLastMessage: 'Patient archived', patientEmailStatus: 'Not required', clinicianEmailStatus: 'Not required', patientNotificationStatus: 'Not required', clinicianNotificationStatus: 'Not required' } });
+        await tx.notification.updateMany({ where: { patientId: id }, data: { read: true, readAt: new Date() } });
+      }
+      await tx.historyLog.create({ data: { patientId: id, ...await actor(req.user, tx), action: restore ? 'Patient Restored' : 'Patient Archived', details: restore ? 'Restored; cancelled appointments remain cancelled' : reason } });
+      return updated;
+    });
+    res.json(patient);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+router.delete('/:id', authorizeRoles('STAFF', 'ADMIN'), (req, res) => res.status(405).json({ message: 'Archive patient records instead of permanently deleting them' }));
 
 module.exports = router;

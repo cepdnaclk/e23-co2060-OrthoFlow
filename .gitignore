@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.test
+docs/testing/evidence/runs/
+*.log
+*.db
+.codex_tmp/
+generated/
+code/backend/private/
+code/backend/public/uploads/
