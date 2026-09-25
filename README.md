@@ -116,7 +116,3 @@ By completing this project, students will gain experience in:
 This system can be deployed in academic dental clinics and adapted for public healthcare institutions, contributing to digitally enabled, data-driven orthodontic care. It also serves as a foundation for future innovations like analytics-driven outcome evaluation and AI-supported orthodontic diagnosis.
 
 ---
-
-## Hosting
-
-See [Render deployment instructions](docs/HOSTING.md). The included `render.yaml` deploys the frontend and API together with PostgreSQL and persistent file storage.
