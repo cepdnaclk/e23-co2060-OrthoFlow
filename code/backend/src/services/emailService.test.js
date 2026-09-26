@@ -25,6 +25,7 @@ function harness(env = {}, options = {}) {
       return { ok: true, json: async () => ({ id: 'test-message-id' }) };
     },
     require: name => {
+      if (name === './gmailService') return { gmailDelivery: { authorize: async () => 'test-access', send: async data => ({ sent: true, provider: 'gmail', messageId: 'gmail-id' }) } };
       assert.equal(name, 'nodemailer');
       if (options.noNodemailer) throw new Error('not installed');
       return {
@@ -171,4 +172,24 @@ test('disabled, unsupported providers and invalid SMTP ports skip delivery', asy
     assert.equal(h.requests.length, 0);
     assert.equal(h.smtpMessages.length, 0);
   }
+});
+
+test('Gmail routes through HTTPS provider without SMTP or Resend', async () => {
+  const h = harness({ EMAIL_PROVIDER: 'gmail', GMAIL_CLIENT_ID: 'id', GMAIL_CLIENT_SECRET: 'secret', GMAIL_REFRESH_TOKEN: 'refresh', GMAIL_SENDER: 'clinic@example.test' });
+  assert.equal(h.service.getEmailConfigStatus().ready, true);
+  const result = await h.service.sendEmail(message);
+  assert.equal(result.provider, 'gmail');
+  assert.equal(result.sent, true);
+  const checked = await h.service.verifyEmailConnection();
+  assert.equal(checked.authorizationValid, true);
+  assert.equal(checked.verified, false);
+  assert.equal(h.smtpMessages.length, 0);
+  assert.equal(h.requests.length, 0);
+});
+test('Incomplete Gmail credentials skip delivery even when SMTP is configured', async () => {
+  const h = harness({ ...smtpEnv, EMAIL_PROVIDER: 'gmail' });
+  const result = await h.service.sendEmail(message);
+  assert.equal(result.sent, false);
+  assert.match(result.reason, /GMAIL_CLIENT_ID/);
+  assert.equal(h.smtpMessages.length, 0);
 });

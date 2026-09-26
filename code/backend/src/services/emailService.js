@@ -50,21 +50,28 @@ function getEmailConfigStatus() {
     smtpPassConfigured: Boolean(setting("SMTP_PASS")),
     mailFromConfigured: Boolean(setting("MAIL_FROM")),
     resendApiKeyConfigured: Boolean(setting("RESEND_API_KEY")),
-    ready: provider === "resend" ? resendReady : provider === "smtp" && smtpReady(),
+    gmailConfigured: ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].every(key => Boolean(setting(key))),
+    ready: provider === "gmail" ? ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].every(key => Boolean(setting(key))) : provider === "resend" ? resendReady : provider === "smtp" && smtpReady(),
   };
 }
 
 function unavailableReason(config) {
+  if (config.provider === "gmail") return "GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN and GMAIL_SENDER are required";
   if (config.provider === "disabled") return "Email delivery is disabled";
   if (config.provider === "resend") return "RESEND_API_KEY and MAIL_FROM are required";
   if (config.provider === "smtp") return "SMTP settings are incomplete or invalid";
-  return "EMAIL_PROVIDER must be smtp, resend, or disabled";
+  return "EMAIL_PROVIDER must be gmail, smtp, resend, or disabled";
 }
 
 async function verifyEmailConnection() {
   const config = getEmailConfigStatus();
   if (!config.ready) {
     return { verified: false, skipped: true, reason: unavailableReason(config), config };
+  }
+
+  if (config.provider === "gmail") {
+    await require("./gmailService").gmailDelivery.authorize();
+    return { verified: false, authorizationValid: true, provider: "gmail", reason: "Gmail OAuth authorization succeeded; email delivery has not been tested" };
   }
 
   if (config.provider === "resend") {
@@ -136,6 +143,8 @@ async function sendEmail({ to, subject, text, html }) {
   if (config.provider === "resend") {
     return sendResendEmail({ to: recipients, subject, text, html });
   }
+
+  if (config.provider === "gmail") return require("./gmailService").gmailDelivery.send({ to: recipients, subject, text, html });
 
   let result;
   try {
