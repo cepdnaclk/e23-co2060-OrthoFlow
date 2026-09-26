@@ -13,11 +13,13 @@ Digitisation and Workflow Automation of Orthodontic Case Records is a web-based 
 ---
 
 ## Team
+
 - E/23/403, D.J. Thotagamuwa, e23403@eng.pdn.ac.lk
 - E/23/407, S.A.A. Upek, e23407@eng.pdn.ac.lk
 - E/23/214, G.N.N.N. Madusanka, e23214@eng.pdn.ac.lk)
 
 #### Table of Contents
+
 1. [Introduction](#introduction)
 2. [Solution Architecture](#solution-architecture)
 3. [Software Designs](#software-designs)
@@ -27,7 +29,7 @@ Digitisation and Workflow Automation of Orthodontic Case Records is a web-based 
 
 ## Introduction
 
-Orthodontic diagnosis and treatment planning rely on the systematic collection and longitudinal tracking of clinical data, including patient history, diagnostic indices, photographs, radiographs, and treatment records. Traditional paper-based or fragmented digital systems lead to inefficiencies, data inconsistency, and challenges in patient follow-up.  
+Orthodontic diagnosis and treatment planning rely on the systematic collection and longitudinal tracking of clinical data, including patient history, diagnostic indices, photographs, radiographs, and treatment records. Traditional paper-based or fragmented digital systems lead to inefficiencies, data inconsistency, and challenges in patient follow-up.
 
 This project addresses these issues by digitalising patient records, integrating radiographs, enabling history tracing, and implementing automated messaging for appointments. It aims to improve clinical decision-making, support audits and research, and lay a foundation for AI-assisted diagnosis.
 
@@ -41,7 +43,6 @@ The system is developed using **Spring Boot** (backend), **React** (frontend), a
 - **Backend:** REST APIs with secure, role-based access and timeline-based treatment tracking.
 - **Database:** Structured schema to capture patient records, diagnostics, and clinical media.
 - **Messaging Service:** email notifications for patient appointments.
-
 
 ---
 
@@ -72,7 +73,7 @@ This project successfully digitalised orthodontic clinical workflows, providing 
 
 ## Links
 
-- [Project Repository](https://github.com/cepdnaclk/{{ page.repository-name }}){:target="_blank"}
-- [Project Page](https://cepdnaclk.github.io/{{ page.repository-name}}){:target="_blank"}
+- [Project Repository](https://github.com/cepdnaclk/e23-co2060-OrthoFlow){:target="\_blank"}
+- [Project Page](https://cepdnaclk.github.io/e23-co2060-OrthoFlow){:target="\_blank"}
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
