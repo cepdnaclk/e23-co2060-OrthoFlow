@@ -17,3 +17,6 @@
 **/*.log
 **/*.db
 **/*.db-journal
+
+!code/shared/
+!code/shared/**
