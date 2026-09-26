@@ -73,7 +73,7 @@ For local development while changing the schema, use `npm run db:migrate`. For q
 
 ## Email Reminder Setup
 
-Backend reminders use the patient `email` saved on the patient record and the clinician email addresses. Copy `code/backend/.env.example` to `code/backend/.env`, then configure SMTP email delivery:
+Backend reminders use the patient `email` saved on the patient record and the clinician email addresses. On Render Free, use the Resend HTTPS provider because SMTP ports are unavailable. Copy `code/backend/.env.example` to `code/backend/.env`, then configure SMTP email delivery:
 
 ```env
 SMTP_HOST="smtp.gmail.com"
@@ -85,7 +85,7 @@ MAIL_FROM="OrthoRecords <your-clinic-email@example.com>"
 
 ```
 
-If SMTP is not configured, the reminder job still creates in-app notifications and logs `[EMAIL MOCK]` output to the backend terminal for local demonstrations. Mock output means no real email was sent.
+If email delivery is not configured, automatic scans are disabled and email attempts are reported as skipped. No successful delivery is recorded. Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `MAIL_FROM` to use HTTPS email delivery on free hosting.
 
 The backend scans appointments on startup, after a new appointment is scheduled, and then every `REMINDER_SCAN_INTERVAL_MINUTES` (5 minutes by default). Any scheduled appointment within `REMINDER_ADVANCE_HOURS` receives one patient reminder and one clinician reminder.
 

@@ -7,6 +7,7 @@ const { storagePaths, validateEnvironment, allowedOrigins } = require("./config"
 const { bootstrapUsers } = require("./bootstrap");
 const prisma = require("./prismaClient");
 const { startReminderScheduler } = require("./services/appointmentReminderService");
+const { readFile } = require("./services/storageService");
 const { getEmailConfigStatus } = require("./services/emailService");
 
 const storage = storagePaths();
@@ -24,8 +25,9 @@ app.get('/uploads/:filename', require('./routes/authRoutes').authenticateToken, 
     if (!await require('./utils/patientAccess').canReadPatient(req.user, image.patientId)) return res.sendStatus(403);
     res.set('Cache-Control', 'private, no-store');
     res.set('X-Content-Type-Options', 'nosniff');
-    res.sendFile(path.join(storage.uploads, path.basename(req.params.filename)));
-  } catch { res.sendStatus(500); }
+    const file = await readFile('uploads', req.params.filename);
+    res.type(file.contentType).send(file.buffer);
+  } catch (error) { res.sendStatus(error.status === 404 ? 404 : 502); }
 });
 
 app.get('/health', async (req, res) => {
@@ -34,6 +36,8 @@ app.get('/health', async (req, res) => {
     res.json({ app: 'OrthoRecords', status: 'ok', dbProvider: 'postgresql' });
   } catch { res.status(503).json({ app: 'OrthoRecords', status: 'unavailable' }); }
 });
+
+app.use('/internal', require('./routes/scheduledRoutes').createScheduledRouter());
 
 // Routes
 const authRoutes = require("./routes/authRoutes").router;
@@ -61,8 +65,10 @@ app.use((req, res) => res.status(404).json({ message: 'Not found' }));
 async function start() {
   validateEnvironment();
   if (process.env.NODE_ENV === 'production' && !fs.existsSync(path.join(frontend, 'index.html'))) throw new Error('Build the frontend before starting production.');
-  fs.mkdirSync(storage.uploads, { recursive: true });
-  fs.mkdirSync(storage.consents, { recursive: true });
+  if ((process.env.STORAGE_PROVIDER || 'local') === 'local') {
+    fs.mkdirSync(storage.uploads, { recursive: true });
+    fs.mkdirSync(storage.consents, { recursive: true });
+  }
   await prisma.$connect();
   await bootstrapUsers(prisma);
   const port = Number(process.env.PORT || 8080);
@@ -70,7 +76,7 @@ async function start() {
     const listener = app.listen(port, '0.0.0.0', () => resolve(listener));
     listener.once('error', reject);
   });
-  const timer = process.env.REMINDERS_ENABLED === 'false' ? null : startReminderScheduler();
+  const timer = process.env.REMINDERS_ENABLED === 'false' || !getEmailConfigStatus().ready ? null : startReminderScheduler();
   console.log('Server running on port ' + server.address().port);
   console.log('Database provider: postgresql');
   console.log('Email reminders ready: ' + (getEmailConfigStatus().ready ? 'yes' : 'no'));

@@ -418,7 +418,7 @@ async function processAppointmentReminder(prisma, appointmentId, options = {}) {
   await prisma.historyLog.create({
     data: {
       patientId: appointment.patientId,
-      action: "Appointment Reminder Sent",
+      action: "Appointment Reminder Processed",
       details: `24-hour email reminder processed for ${formatDate(content.appointmentAt)} at ${appointment.time}`,
     },
   });

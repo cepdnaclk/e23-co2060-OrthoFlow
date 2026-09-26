@@ -1,14 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('node:path');
-const fs = require('node:fs/promises');
+const { saveFile, readFile, deleteFile } = require('../services/storageService');
 const { randomUUID } = require('node:crypto');
 const prisma = require('../prismaClient');
 const { authenticateToken, authorizeRoles } = require('./authRoutes');
 const { canReadPatient, actor, httpError } = require('../utils/patientAccess');
 const definitions = require('../../../shared/clinicalFields.json');
 const router = express.Router();
-const { consents: directory } = require('../config').storagePaths();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 4 } });
 router.use(authenticateToken);
 router.use('/:patientId', async (req, res, next) => {
@@ -25,6 +24,7 @@ router.get('/:patientId', async (req, res, next) => {
 });
 router.post('/:patientId', authorizeRoles('STAFF', 'ADMIN'), upload.single('document'), async (req, res, next) => {
   let written;
+  let committed = false;
   try {
     const payload = req.body.payload ? JSON.parse(req.body.payload) : req.body;
     const definition = definitions.find(item => item.kind === payload.kind);
@@ -50,10 +50,9 @@ router.post('/:patientId', authorizeRoles('STAFF', 'ADMIN'), upload.single('docu
       const png = bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
       const jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
       if (!pdf && !png && !jpg) throw httpError(400, 'Upload a PDF, PNG or JPEG document');
-      await fs.mkdir(directory, { recursive: true });
       const filename = `${randomUUID()}.${pdf ? 'pdf' : png ? 'png' : 'jpg'}`;
-      written = path.join(directory, filename);
-      await fs.writeFile(written, bytes, { flag: 'wx' });
+      await saveFile('consents', filename, bytes, pdf ? 'application/pdf' : png ? 'image/png' : 'image/jpeg');
+      written = filename;
       document = { documentFile: filename, documentName: path.basename(req.file.originalname), documentType: pdf ? 'application/pdf' : png ? 'image/png' : 'image/jpeg' };
     }
     const record = await prisma.$transaction(async tx => {
@@ -77,8 +76,9 @@ router.post('/:patientId', authorizeRoles('STAFF', 'ADMIN'), upload.single('docu
       if (!payload.previousId && (payload.kind === 'RETENTION' || payload.kind === 'DISCHARGE')) await tx.patient.update({ where: { id: patient.id }, data: { status: payload.kind === 'RETENTION' ? 'Retention' : 'Discharged' } });
       return saved;
     });
+    committed = true;
     res.status(201).json(publicRecord(record));
-  } catch (error) { if (written) await fs.unlink(written).catch(() => {}); next(error); }
+  } catch (error) { if (written && !committed) await deleteFile('consents', written).catch(() => {}); next(error); }
 });
 router.post('/:patientId/:id/approve', authorizeRoles('STAFF', 'ADMIN'), async (req, res, next) => {
   try {
@@ -99,8 +99,11 @@ router.get('/:patientId/:id/document', async (req, res, next) => {
   try {
     const record = await prisma.clinicalRecord.findUnique({ where: { id: Number(req.params.id) } });
     if (!record || record.patientId !== req.params.patientId || !record.documentFile) throw httpError(404, 'Document not found');
+    const file = await readFile('consents', path.basename(record.documentFile));
+    res.set('Cache-Control', 'private, no-store');
     res.set('X-Content-Type-Options', 'nosniff');
-    res.download(path.join(directory, path.basename(record.documentFile)), record.documentName, error => { if (error && !res.headersSent) next(error); });
+    res.attachment(record.documentName || record.documentFile);
+    res.type(file.contentType).send(file.buffer);
   } catch (error) { next(error); }
 });
 router.use((error, req, res, next) => res.status(error.status || (error instanceof multer.MulterError || error instanceof SyntaxError ? 400 : 500)).json({ message: error.status || error instanceof multer.MulterError || error instanceof SyntaxError ? error.message : 'Could not process clinical record' }));

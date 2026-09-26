@@ -18,7 +18,7 @@ const admin = new PrismaClient({ datasources: { db: { url: source.href } } });
 const db = new PrismaClient({ datasources: { db: { url: target.href } } });
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orthoflow-deploy-'));
 const password = randomBytes(24).toString('hex');
-const env = { ...process.env, NODE_ENV: 'production', DATABASE_URL: target.href, JWT_SECRET: randomBytes(32).toString('hex'), DATA_DIR: dataDir, PORT: '0', ADMIN_USERNAME: 'deployment-admin', ADMIN_PASSWORD: password, REMINDERS_ENABLED: 'false', SMTP_HOST: '', CORS_ORIGINS: 'https://clinic.example' };
+const env = { ...process.env, NODE_ENV: 'production', STORAGE_PROVIDER: 'local', EMAIL_PROVIDER: 'disabled', DATABASE_URL: target.href, JWT_SECRET: randomBytes(32).toString('hex'), DATA_DIR: dataDir, PORT: '0', ADMIN_USERNAME: 'deployment-admin', ADMIN_PASSWORD: password, REMINDERS_ENABLED: 'false', SMTP_HOST: '', CORS_ORIGINS: 'https://clinic.example' };
 let child, created = false;
 async function stop() {
   if (child && child.exitCode === null && child.signalCode === null) {

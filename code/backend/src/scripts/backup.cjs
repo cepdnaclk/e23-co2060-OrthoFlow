@@ -40,6 +40,7 @@ function verify(dir, manifest) {
 }
 const command = process.argv[2];
 try {
+  if (process.env.STORAGE_PROVIDER === 'supabase') throw new Error('This local-media backup script cannot export Supabase objects. Export PostgreSQL and the private storage bucket together using the cloud provider before claiming a complete backup.');
   if (command === 'backup') {
     const destination = path.join(root, new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 8));
     fs.mkdirSync(destination, { recursive: true });

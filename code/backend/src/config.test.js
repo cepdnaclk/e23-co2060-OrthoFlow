@@ -32,3 +32,8 @@ test('fresh production refuses weak or absent bootstrap credentials', async () =
   await assert.rejects(bootstrapUsers(db, { NODE_ENV: 'production' }), /ADMIN_USERNAME/);
   await assert.rejects(bootstrapUsers(db, { NODE_ENV: 'production', ADMIN_USERNAME: 'admin', ADMIN_PASSWORD: 'short' }), /ADMIN_PASSWORD/);
 });
+
+test('Supabase production uses cloud persistence without a local disk', () => {
+  assert.doesNotThrow(() => validateEnvironment({ ...base, DATA_DIR: '', STORAGE_PROVIDER: 'supabase', SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'server-only-test' }));
+  assert.throws(() => validateEnvironment({ ...base, STORAGE_PROVIDER: 'supabase' }), /server-only/);
+});
