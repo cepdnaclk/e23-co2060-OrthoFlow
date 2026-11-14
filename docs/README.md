@@ -3,7 +3,7 @@ layout: home
 permalink: index.html
 
 repository-name: e23-co2060-OrthoFlow
-title: Digitisation and Workflow Automation of Orthodontic Case Records
+title: OrthoFlow-Digitisation and Workflow Automation of Orthodontic Case Records
 ---
 
 # Project Title
@@ -16,7 +16,7 @@ Digitisation and Workflow Automation of Orthodontic Case Records is a web-based 
 
 - E/23/403, D.J. Thotagamuwa, e23403@eng.pdn.ac.lk
 - E/23/407, S.A.A. Upek, e23407@eng.pdn.ac.lk
-- E/23/214, G.N.N.N. Madusanka, e23214@eng.pdn.ac.lk)
+- E/23/214, G.N.N.N. Madusanka, e23214@eng.pdn.ac.lk
 
 #### Table of Contents
 
