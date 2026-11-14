@@ -14,9 +14,9 @@ Digitisation and Workflow Automation of Orthodontic Case Records is a web-based 
 
 ## Team
 
-- E/23/403, D.J. Thotagamuwa, e23403@eng.pdn.ac.lk
-- E/23/407, S.A.A. Upek, e23407@eng.pdn.ac.lk
-- E/23/214, G.N.N.N. Madusanka, e23214@eng.pdn.ac.lk
+-  E/23/403, D.J. Thotagamuwa, [email](mailto:e23403@eng.pdn.ac.lk)
+-  E/23/407, S.A.A. Upek, [email](mailto:e23407@eng.pdn.ac.lk)
+-  E/23/214, G.N.N.N. Madusanka, [email](mailto:e23214@eng.pdn.ac.lk)
 
 #### Table of Contents
 
@@ -73,7 +73,7 @@ This project successfully digitalised orthodontic clinical workflows, providing 
 
 ## Links
 
-- [Project Repository](https://github.com/cepdnaclk/e23-co2060-OrthoFlow)
-- [Project Page](https://cepdnaclk.github.io/e23-co2060-OrthoFlow/)
+- [Project Repository](https://github.com/cepdnaclk/{{ page.repository-name }}){:target="_blank"}
+- [Project Page](https://cepdnaclk.github.io/{{ page.repository-name}}){:target="_blank"}
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
